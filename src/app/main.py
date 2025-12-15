@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Body
 from pydantic import BaseModel
 from typing import Optional
-from models import Post
+from models.post import Post
 
 app = FastAPI()
 
