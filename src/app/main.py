@@ -5,20 +5,7 @@ from models.post import Post
 
 app = FastAPI()
 
-posts = [{
-    "id": "1",
-    "title": "First Post",
-    "content": "Content of the first post",
-    "published": True,
-    "author": "Alice"
-},
-{
-    "id": "2",
-    "title": "Second Post",
-    "content": "Content of the second post",
-    "published": False,
-    "author": "Bob"
-}]
+posts: list[Post] = []
 
 @app.get("/")
 def root():
@@ -37,7 +24,12 @@ def get_latest_post():
 
 @app.get("/posts")
 def get_posts():
-    return {"data": "This is your posts"}
+    if not posts or len(posts) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No posts available"
+        )
+    return {"data": posts}
 
 @app.get("/posts/{id}")
 def get_post(id: int, response: Response):
