@@ -40,7 +40,7 @@ def get_posts():
     return {"data": "This is your posts"}
 
 @app.get("/posts/{id}")
-def get_post(id: str, response: Response):
+def get_post(id: int, response: Response):
     post = find_post(id)
     if not post:
         raise HTTPException(
@@ -50,15 +50,21 @@ def get_post(id: str, response: Response):
     return {"post_detail": post}
 
 @app.put("/posts/{id}")
-def update_post(id: str, updated_post: Post = Body(...)):
+def update_post(id: int, updated_post: Post = Body(...)):
     return {"data": f"Post with id: {id} has been updated"}
 
 @app.delete("/posts/{id}")
-def delete_post(id: str):
+def delete_post(id: int):
     return {"data": f"Post with id: {id} has been deleted"}
 
-def find_post(id: str):
+def find_post(id: int):
     for post in posts:
         if post["id"] == id:
             return post
+    return None
+
+def find_index_post(id: int):
+    for index, post in enumerate(posts):
+        if post["id"] == id.str():
+            return index
     return None
