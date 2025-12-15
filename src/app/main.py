@@ -20,7 +20,14 @@ def create_posts(new_post: Post):
 
 @app.get("/posts/latest")
 def get_latest_post():
-    return {"data": "This is your latest post"}
+    if not posts:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No posts available"
+        )
+    latest_post = posts[-1]
+    return {"latest_post": latest_post}
+    
 
 @app.get("/posts")
 def get_posts():
@@ -42,8 +49,17 @@ def get_post(id: int, response: Response):
     return {"post_detail": post}
 
 @app.put("/posts/{id}")
-def update_post(id: int, updated_post: Post = Body(...)):
-    return {"data": f"Post with id: {id} has been updated"}
+def update_post(id: int, post: Post):
+    index = find_index_post(id)
+    if index is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {id} does not exist"
+        )
+    post_dict = post.dict()
+    post_dict['id'] = id
+    posts[index] = post_dict
+    return {"data": post_dict}
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int):
