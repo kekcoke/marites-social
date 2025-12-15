@@ -45,9 +45,18 @@ def get_post(id: int, response: Response):
 def update_post(id: int, updated_post: Post = Body(...)):
     return {"data": f"Post with id: {id} has been updated"}
 
-@app.delete("/posts/{id}")
+@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int):
-    return {"data": f"Post with id: {id} has been deleted"}
+    index = find_index_post(id)
+    if index is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {id} does not exist"
+        )
+    posts.pop(index)
+
+    # Do not include any content in the response body when using a 204 status code, as this might cause errors related to the declared Content-Length.
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 def find_post(id: int):
     for post in posts:
