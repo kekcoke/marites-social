@@ -1,5 +1,7 @@
-from fastapi import FastAPI, Body, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Response, status
+from fastapi.params import Body
 from pydantic import BaseModel
+from random import randrange
 from typing import Optional
 from models.post import Post
 
