@@ -1,3 +1,6 @@
+import os
+import psycopg2
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.params import Body
 from pydantic import BaseModel
@@ -5,7 +8,48 @@ from random import randrange
 from typing import Optional
 from models.post import Post
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize FastAPI app
 app = FastAPI()
+
+def get_db_connection():
+    """Establish a connection to the database using environment variables.
+    """
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST"),
+            database=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USERNAME"),
+            password=os.getenv("DB_PASSWORD"),
+            port=os.getenv("DB_PORT"),
+            connect_timeout=os.getenv("CONNECT_TIMEOUT"),
+            sslmode=os.getenv("SSL_MODE")
+        )
+        return conn
+    except Exception as e:
+        print(f"Error connecting to the database: {e}")
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                             detail="Database connection error")
+
+@app.get("/db-test")
+def db_test():
+    """Test database connection and return a success message if connected.
+    """
+    conn = get_db_connection()
+    if isinstance(conn, HTTPException):
+        raise conn
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1;")
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if result and result[0] == 1:
+        return {"message": "Database connection successful!"}
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Database test query failed")
 
 posts: list[Post] = []
 
