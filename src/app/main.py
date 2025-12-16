@@ -1,5 +1,7 @@
 import os
 import psycopg2
+import logging
+import sys
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.params import Body
@@ -10,6 +12,21 @@ from models.post import Post
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Logging configuration
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = ("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format=LOG_FORMAT,
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ],
+    force=True,  # IMPORTANT: overrides uvicorn defaults
+)
+logger = logging.getLogger(__name__)
+logger.info("Logging is configured.")
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -25,11 +42,12 @@ def get_db_connection():
             password=os.getenv("DB_PASSWORD"),
             port=os.getenv("DB_PORT"),
             connect_timeout=os.getenv("CONNECT_TIMEOUT"),
-            sslmode=os.getenv("SSL_MODE")
+            sslmode=os.getenv("SSL_MODE"),
+            cursor_factory=psycopg2.extras.RealDictCursor
         )
         return conn
     except Exception as e:
-        print(f"Error connecting to the database: {e}")
+        logger.info(f"Error connecting to the database: {e}")
         return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                              detail="Database connection error")
 
