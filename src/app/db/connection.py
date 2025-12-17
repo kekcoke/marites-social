@@ -26,5 +26,5 @@ def get_db_connection():
         logger.info("Database connection established.")
         return conn
     except Exception as e:
-        logger.error(f"Error connecting to the database: {e}")
-        raise DatabaseConnectionError("Failed to connect to the database.") from e
+        logger.error("Error connecting to the database", exc_info=True)
+        raise DatabaseConnectionError("Failed to connect to the database") from e
