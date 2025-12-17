@@ -43,6 +43,7 @@ trap cleanup INT TERM EXIT
 
 # ---------- Start server ----------
 uvicorn main:app \
+  --env-file dev.env \
   --reload \
   --host "$HOST" \
   --port "$PORT" &
