@@ -91,11 +91,11 @@ def get_posts():
             return {"data": posts}
 
 @app.get("/posts/{id}")
-def get_post(id: int, response: Response):
+def get_post(id: int):
     """Get a specific post by ID from the database."""
     with get_db_session() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM posts WHERE id = %s", (id,))
+            cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
             post = cursor.fetchone()
             
             if not post:
