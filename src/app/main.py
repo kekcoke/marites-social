@@ -107,38 +107,34 @@ def get_post(id: int, response: Response):
 
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
-    index = find_index_post(id)
-    if index is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id: {id} does not exist"
+    """Update a specific post by ID in the database."""
+    with get_db_session() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *;",
+            (post.title, post.content, post.published, id)
         )
-    post_dict = post.dict()
-    post_dict['id'] = id
-    posts[index] = post_dict
-    return {"data": post_dict}
+        updated_post = cursor.fetchone()
+        conn.commit()
+        if not updated_post:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Post with id: {id} does not exist"
+            )
+        return {"data": dict(updated_post)}
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int):
-    index = find_index_post(id)
-    if index is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id: {id} does not exist"
-        )
-    posts.pop(index)
-
+    """Delete a specific post by ID from the database."""
+    with get_db_session() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM posts WHERE id = %s RETURNING *;", (id,))
+        deleted_post = cursor.fetchone()
+        conn.commit()
+        if not deleted_post:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Post with id: {id} does not exist"
+            )
     # Do not include any content in the response body when using a 204 status code, as this might cause errors related to the declared Content-Length.
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-def find_post(id: int):
-    for post in posts:
-        if post["id"] == id:
-            return post
-    return None
-
-def find_index_post(id: int):
-    for index, post in enumerate(posts):
-        if post["id"] == id.str():
-            return index
-    return None
