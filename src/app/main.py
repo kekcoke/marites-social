@@ -2,17 +2,34 @@ import os
 import psycopg2
 import logging
 import sys
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Response, status
-from fastapi.params import Body
-from pydantic import BaseModel
-from random import randrange
-from typing import Optional
+from datetime import datetime
+
 from db.session import get_db_session
-from models.post import Post
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+# FastAPI imports
+from fastapi import FastAPI, Depends, HTTPException, Response, status
+from fastapi.params import Body
+
+# Import SQLAlchemy & Pydantic
+from src.app.db.connection import engine
+from src.app.models import post
+from src.app.models.post import Base
+
+from src.app.db.session import get_db_session
+# from pydantic import BaseModel
+# from sqlalchemy.orm import Session
+
+# Automatically create the database tables if they do not exist
+Base.metadata.create_all(bind=engine)
+
+# For generating random data in tests
+from random import randrange
+from typing import List
+
 
 # Logging configuration
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -47,6 +64,33 @@ def db_test():
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Database connection test failed"
                 )
+
+@app.get("/sqlalchemy-test")
+def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
+    """Test SQLAlchemy ORM by creating and retrieving a Post.
+    """
+    new_post = models.Posts(
+        title="Test Post",
+        content="This is a test post created via SQLAlchemy ORM.",
+        author="Tester",
+        created_at=datetime.utcnow()
+    )
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+
+    retrieved_post = db.query(models.Posts).filter(models.Posts.id == new_post.id).first()
+    if retrieved_post:
+        return {"message": "SQLAlchemy ORM test successful", "post": {
+            "id": retrieved_post.id,
+            "title": retrieved_post.title,
+            "content": retrieved_post.content
+        }}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="SQLAlchemy ORM test failed"
+        )
 
 @app.get("/")
 def root():
@@ -95,6 +139,7 @@ def get_post(id: int):
     """Get a specific post by ID from the database."""
     with get_db_session() as conn:
             cursor = conn.cursor()
+            # Be sure to include an extra comma in the tuple (i.e., (str(id),)) to prevent unexpected issues with parameter tuple assignment.
             cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
             post = cursor.fetchone()
             
