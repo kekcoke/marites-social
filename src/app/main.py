@@ -70,7 +70,7 @@ def test_sqlalchemy_posts(db: Session = Depends(get_db_session)):
     """Test SQLAlchemy ORM by retrieving all posts.
     """
     posts = db.query(models.Posts).all()
-    return {"message": "SQLAlchemy ORM test successful", "posts": posts}
+    return {"data": posts}
 
 @app.get("/sqlalchemy-test")
 def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
