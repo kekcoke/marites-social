@@ -18,14 +18,19 @@ class Post(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    published = Column(Boolean, default=True)
+    published = Column(Boolean, server_default="true", nullable=False)    
     author = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )    
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
+        nullable=False,
     )
     rating = Column(Float, nullable=True)
-    likes = Column(Integer, default=0)
+    likes = Column(Integer, server_default="0", nullable=False)
     comments = Column(Text, nullable=True)
