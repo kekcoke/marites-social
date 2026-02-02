@@ -4,6 +4,7 @@ from psycopg2.extras import RealDictCursor
 import logging
 import sys
 from datetime import datetime
+from passlib.context import CryptContext
 from random import randrange
 
 from dotenv import load_dotenv
@@ -23,13 +24,15 @@ from . import models, schemas
 
 from src.app.db import get_db_session
 
+# Configure PassLib to use bcrypt for password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+                           
 # Automatically create the database tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
 
 # For generating random data in tests
 from random import randrange
 from typing import List, Optional
-
 
 # Logging configuration
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
