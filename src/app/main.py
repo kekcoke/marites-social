@@ -8,6 +8,8 @@ from random import randrange
 
 from dotenv import load_dotenv
 
+from app import db
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -101,110 +103,69 @@ def root():
 def create_posts(post: PostSchema, db: Session = Depends(get_db_session)):
     """Create a new post in the database.
     """
-    # **post.model_dump() next
     new_post = PostModel(
         **post.model_dump()
     )
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
+
     return {"data": new_post}
 
 @app.get("/posts/latest")
-def get_latest_post():
+def get_latest_post(db: Session = Depends(get_db_session)):
     """Get the most recently created post from the database."""
-    with get_db_session() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM posts ORDER BY created_at DESC LIMIT 1;")
-        post = cursor.fetchone()
-        if not post:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No posts available"
-            )
-        return {"latest_post": dict(post)}
+    post = db.query(PostModel).order_by(PostModel.created_at.desc()).first()
+
+    return {"data": post}
     
 @app.get("/posts")
 def get_posts(db: Session = Depends(get_db_session)):
-    posts = db.query(Post).all()  # ORM-based query to retrieve all posts.
+    """ Get all posts from the database."""
+    posts = db.query(PostModel).all()  # ORM-based query to retrieve all posts.
+
     return {"data": posts}
 
 @app.get("/posts/{id}")
 def get_post(id: int):
     """Get a specific post by ID from the database."""
-    with get_db_session() as conn:
-            cursor = conn.cursor()
-            # Be sure to include an extra comma in the tuple (i.e., (str(id),)) to prevent unexpected issues with parameter tuple assignment.
-            cursor.execute("SELECT * FROM posts WHERE id = %s", (str(id),))
-            post = cursor.fetchone()
-            
-            if not post:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Post with id: {id} was not found"
-                )
-            return {"data": post}
+    post = db.query(PostModel).filter(PostModel.id == id).first()
+
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Post with id: {id} was not found")
+
+    return {"data": post}
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: PostSchema):
+def update_post(id: int, post: PostSchema, db: Session = Depends(get_db_session)):
     """Update a specific post by ID in the database."""
-    with get_db_session() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *;",
-            (post.title, post.content, post.published, id)
+    post_query = db.query(PostModel).filter(PostModel.id == id)
+    existing_post = post_query.first()
+
+    if existing_post is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {id} does not exist"
         )
-        updated_post = cursor.fetchone()
-        conn.commit()
-        if not updated_post:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Post with id: {id} does not exist"
-            )
-        return {"data": dict(updated_post)}
+
+    post_query.update(post.model_dump(), synchronize_session=False)
+    db.commit()
+
+    updated_post = post_query.first()
+    return {"data": updated_post}
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
+def delete_post(id: int, db: Session = Depends(get_db_session)):
     """Delete a specific post by ID from the database."""
-    with get_db_session() as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM posts WHERE id = %s RETURNING *;", (id,))
-        deleted_post = cursor.fetchone()
-        conn.commit()
-        if not deleted_post:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Post with id: {id} does not exist"
-            )
-    # Do not include any content in the response body when using a 204 status code, as this might cause errors related to the declared Content-Length.
+    post_query = db.query(PostModel).filter(PostModel.id == id)
+
+    if post_query.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {id} does not exist"
+        )
+
+    post_query.delete(synchronize_session=False)
+    db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-# @app.get("/users/", response_model=List[schemas.User])
-# def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db_session)):
-#     users = crud.get_users(db, skip=skip, limit=limit)
-#     return users
-
-# @app.get("/users/{user_id}", response_model=schemas.User)
-# def read_user(user_id: int, db: Session = Depends(get_db_session)):
-#     db_user = crud.get_user(db, user_id=user_id)
-#     if db_user is None:
-#         raise HTTPException(status_code=404, detail="User not found")
-#     return db_user
-
-# @app.post("/users/", response_model=schemas.User)
-# def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session)):
-#     db_user = crud.get_user_by_email(db, email=user.email)
-#     if db_user:
-#         raise HTTPException(status_code=400, detail="Email already registered")
-#     return crud.create_user(db=db, user=user)
-
-# @app.post("/users/{user_id}/items/", response_model=schemas.Item)
-# def create_item_for_user(
-#     user_id: int, item: schemas.ItemCreate, db: Session = Depends(get_db_session)
-# ):
-#     return crud.create_user_item(db=db, item=item, user_id=user_id)
-
-# @app.get("/items/", response_model=List[schemas.Item])
-# def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db_session)):
-#     items = crud.get_items(db, skip=skip, limit=limit)
-#     return items
