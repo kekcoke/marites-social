@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ engine = create_engine(
     connect_args=connect_args
 )
 
-Session_Local = sessionmaker(
+SessionLocal = sessionmaker(
     autocommit=False, 
     autoflush=False,
     expire_on_commit=False,
@@ -64,9 +64,9 @@ Session_Local = sessionmaker(
 # Base class for declarative models
 Base = declarative_base()
 
-def get_db_session():
+def get_db_session() -> Session:
     """Provide a transactional scope around a series of operations."""
-    db = Session_Local()
+    db = SessionLocal()
     try:
         yield db
     finally:
