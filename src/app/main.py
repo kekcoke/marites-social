@@ -19,15 +19,14 @@ from fastapi.params import Body
 from src.app.db.connection import engine
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from src.app.models.post import Base, PostModel
-from src.app.schemas.post import PostSchema
+from . import models, schemas
 
 from src.app.db.session import get_db_session
 from pydantic import BaseModel
 # from sqlalchemy.orm import Session
 
 # Automatically create the database tables if they do not exist
-Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 # For generating random data in tests
 from random import randrange
@@ -63,14 +62,14 @@ def db_test(db: Session = Depends(get_db_session)):
 def test_sqlalchemy_posts(db: Session = Depends(get_db_session)):
     """Test SQLAlchemy ORM by retrieving all posts.
     """
-    result = db.query(PostModel).all()
+    result = db.query(models.Post).all()
     return {"data": result}
 
 @app.get("/sqlalchemy-test")
 def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
     """Test SQLAlchemy ORM by creating and retrieving a Post.
     """
-    new_post = PostModel(
+    new_post = models.Post(
         title="Test Post",
         content="This is a test post created via SQLAlchemy ORM.",
         author="Tester",
@@ -80,7 +79,7 @@ def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
     db.commit()
     db.refresh(new_post)
 
-    retrieved_post = db.query(PostModel).filter(PostModel.id == new_post.id).first()
+    retrieved_post = db.query(models.Post).filter(models.Post.id == new_post.id).first()
     if retrieved_post:
         return {"message": "SQLAlchemy ORM test successful", "post": {
             "id": retrieved_post.id,
@@ -98,10 +97,10 @@ def root():
     return {"message": "welcome to my api"}
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_posts(post: PostSchema, db: Session = Depends(get_db_session)):
+def create_posts(post: schemas.Post, db: Session = Depends(get_db_session)):
     """Create a new post in the database.
     """
-    new_post = PostModel(
+    new_post = models.Post(
         **post.model_dump()
     )
     db.add(new_post)
@@ -113,21 +112,21 @@ def create_posts(post: PostSchema, db: Session = Depends(get_db_session)):
 @app.get("/posts/latest")
 def get_latest_post(db: Session = Depends(get_db_session)):
     """Get the most recently created post from the database."""
-    post = db.query(PostModel).order_by(PostModel.created_at.desc()).first()
+    post = db.query(models.Post).order_by(models.Post.created_at.desc()).first()
 
     return {"data": post}
     
 @app.get("/posts")
 def get_posts(db: Session = Depends(get_db_session)):
     """ Get all posts from the database."""
-    posts = db.query(PostModel).all()  # ORM-based query to retrieve all posts.
+    posts = db.query(models.Post).all()  # ORM-based query to retrieve all posts.
 
     return {"data": posts}
 
 @app.get("/posts/{id}")
 def get_post(id: int):
     """Get a specific post by ID from the database."""
-    post = db.query(PostModel).filter(PostModel.id == id).first()
+    post = db.query(models.Post).filter(models.Post.id == id).first()
 
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -136,9 +135,9 @@ def get_post(id: int):
     return {"data": post}
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: PostSchema, db: Session = Depends(get_db_session)):
+def update_post(id: int, post: schemas.Post, db: Session = Depends(get_db_session)):
     """Update a specific post by ID in the database."""
-    post_query = db.query(PostModel).filter(PostModel.id == id)
+    post_query = db.query(models.Post).filter(models.Post.id == id)
     existing_post = post_query.first()
 
     if existing_post is None:
@@ -156,7 +155,7 @@ def update_post(id: int, post: PostSchema, db: Session = Depends(get_db_session)
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db_session)):
     """Delete a specific post by ID from the database."""
-    post_query = db.query(PostModel).filter(PostModel.id == id)
+    post_query = db.query(models.Post).filter(models.Post.id == id)
 
     if post_query.first() is None:
         raise HTTPException(

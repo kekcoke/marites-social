@@ -13,7 +13,7 @@ from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
-class PostModel(Base):
+class Post(Base):
     __tablename__ = "posts"
 
     id = Column(Integer, primary_key=True)

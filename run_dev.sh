@@ -42,7 +42,7 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # ---------- Start server ----------
-uvicorn main:app \
+uvicorn src.app.main:app \
   --env-file dev.env \
   --reload \
   --host "$HOST" \
