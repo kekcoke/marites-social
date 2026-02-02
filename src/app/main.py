@@ -20,12 +20,9 @@ from fastapi.params import Body
 from src.app.db.connection import engine
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from . import models, schemas
+from . import models, schemas, utils
 
 from src.app.db import get_db_session
-
-# Configure PassLib to use bcrypt for password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
                            
 # Automatically create the database tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
@@ -187,6 +184,9 @@ def delete_post(id: int, db: Session = Depends(get_db_session)):
 
 @app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session)):
+    hashed = utils.hash_password(user.password)
+    user.password = hashed
+
     new_user = models.User(**user.model_dump())
     db.add(new_user)
     db.commit()
