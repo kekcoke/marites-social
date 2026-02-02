@@ -146,11 +146,16 @@ def update_post(id: int, post: schemas.UpdatePost, db: Session = Depends(get_db_
             detail=f"Post with id: {id} does not exist"
         )
 
-    post_query.update(post.model_dump(), synchronize_session=False)
-    db.commit()
+    post_query.update(post.model_dump(exclude_unset=True))
 
-    updated_post = post_query.first()
-    return {"data": updated_post}
+    for key, value in post.model_dump().items():
+        setattr(existing_post, key, value)
+    existing_post.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(existing_post)
+
+    return {"data": existing_post}
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db_session)):
