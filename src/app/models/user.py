@@ -7,7 +7,6 @@ from sqlalchemy import (
     text,
     Uuid
 )
-from sqlalchemy.orm import declarative_base
 from src.app.db.connection import Base
 
 class User(Base):

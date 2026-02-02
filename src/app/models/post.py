@@ -9,7 +9,6 @@ from sqlalchemy import (
     func,
     text
 )
-from sqlalchemy.orm import declarative_base
 from src.app.db.connection import Base
 
 class Post(Base):
