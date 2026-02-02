@@ -181,3 +181,12 @@ def delete_post(id: int, db: Session = Depends(get_db_session)):
     logger.info(f"Deleted post with id: {id}")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session)):
+    new_user = models.User(**user.model_dump())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
