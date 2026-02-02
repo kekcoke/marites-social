@@ -8,8 +8,6 @@ from random import randrange
 
 from dotenv import load_dotenv
 
-from app import db
-
 # Load environment variables from .env file
 load_dotenv()
 
