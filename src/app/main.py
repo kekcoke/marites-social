@@ -1,10 +1,11 @@
 import os
 import psycopg2
+from psycopg2.extras import RealDictCursor
 import logging
 import sys
 from datetime import datetime
+from random import randrange
 
-from db.session import get_db_session
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -16,12 +17,13 @@ from fastapi.params import Body
 
 # Import SQLAlchemy & Pydantic
 from src.app.db.connection import engine
+from sqlalchemy import text
 from sqlalchemy.orm import Session
-from src.app.models.post import Base
-from src.app.schemas.post import Post
+from src.app.models.post import Base, PostModel
+from src.app.schemas.post import PostSchema
 
 from src.app.db.session import get_db_session
-# from pydantic import BaseModel
+from pydantic import BaseModel
 # from sqlalchemy.orm import Session
 
 # Automatically create the database tables if they do not exist
@@ -29,7 +31,7 @@ Base.metadata.create_all(bind=engine)
 
 # For generating random data in tests
 from random import randrange
-from typing import List
+from typing import List, Optional
 
 
 # Logging configuration
@@ -51,33 +53,24 @@ logger.info("Logging is configured.")
 app = FastAPI()
 
 @app.get("/db-test")
-def db_test():
+def db_test(db: Session = Depends(get_db_session)):
     """Test database connection and return a success message if connected.
     """
-    with get_db_session() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT 1;")
-            result = cursor.fetchone()
-            if result and result[0] == 1:
-                return {"message": "Database connection successful"}
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Database connection test failed"
-                )
+    result = db.execute(text("SELECT 1")).fetchone()
+    return {"message": "Database connection successful", "data": result[0]}
             
 @app.get("/sqlalchemy")
 def test_sqlalchemy_posts(db: Session = Depends(get_db_session)):
     """Test SQLAlchemy ORM by retrieving all posts.
     """
-    posts = db.query(models.Posts).all()
-    return {"data": posts}
+    result = db.query(PostModel).all()
+    return {"data": result}
 
 @app.get("/sqlalchemy-test")
 def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
     """Test SQLAlchemy ORM by creating and retrieving a Post.
     """
-    new_post = models.Posts(
+    new_post = PostModel(
         title="Test Post",
         content="This is a test post created via SQLAlchemy ORM.",
         author="Tester",
@@ -87,7 +80,7 @@ def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
     db.commit()
     db.refresh(new_post)
 
-    retrieved_post = db.query(models.Posts).filter(models.Posts.id == new_post.id).first()
+    retrieved_post = db.query(PostModel).filter(PostModel.id == new_post.id).first()
     if retrieved_post:
         return {"message": "SQLAlchemy ORM test successful", "post": {
             "id": retrieved_post.id,
@@ -104,19 +97,18 @@ def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
 def root():
     return {"message": "welcome to my api"}
 
-@app.post("/createposts", status_code=status.HTTP_201_CREATED)
-def create_posts(new_post: Post):
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
+def create_posts(post: PostSchema, db: Session = Depends(get_db_session)):
     """Create a new post in the database.
     """
-    with get_db_session() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *;",
-            (new_post.title, new_post.content, new_post.published))
-        post = cursor.fetchone()
-        conn.commit()
-        return {"data": dict(post)}
-
+    # **post.model_dump() next
+    new_post = PostModel(
+        **post.model_dump()
+    )
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return {"data": new_post}
 
 @app.get("/posts/latest")
 def get_latest_post():
@@ -133,14 +125,9 @@ def get_latest_post():
         return {"latest_post": dict(post)}
     
 @app.get("/posts")
-def get_posts():
-    """Get all posts from the database."""
-    posts = []
-    with get_db_session() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM posts;")
-            posts = cursor.fetchall()
-            return {"data": posts}
+def get_posts(db: Session = Depends(get_db_session)):
+    posts = db.query(Post).all()  # ORM-based query to retrieve all posts.
+    return {"data": posts}
 
 @app.get("/posts/{id}")
 def get_post(id: int):
@@ -159,7 +146,7 @@ def get_post(id: int):
             return {"data": post}
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post):
+def update_post(id: int, post: PostSchema):
     """Update a specific post by ID in the database."""
     with get_db_session() as conn:
         cursor = conn.cursor()
@@ -191,3 +178,33 @@ def delete_post(id: int):
             )
     # Do not include any content in the response body when using a 204 status code, as this might cause errors related to the declared Content-Length.
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+# @app.get("/users/", response_model=List[schemas.User])
+# def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db_session)):
+#     users = crud.get_users(db, skip=skip, limit=limit)
+#     return users
+
+# @app.get("/users/{user_id}", response_model=schemas.User)
+# def read_user(user_id: int, db: Session = Depends(get_db_session)):
+#     db_user = crud.get_user(db, user_id=user_id)
+#     if db_user is None:
+#         raise HTTPException(status_code=404, detail="User not found")
+#     return db_user
+
+# @app.post("/users/", response_model=schemas.User)
+# def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session)):
+#     db_user = crud.get_user_by_email(db, email=user.email)
+#     if db_user:
+#         raise HTTPException(status_code=400, detail="Email already registered")
+#     return crud.create_user(db=db, user=user)
+
+# @app.post("/users/{user_id}/items/", response_model=schemas.Item)
+# def create_item_for_user(
+#     user_id: int, item: schemas.ItemCreate, db: Session = Depends(get_db_session)
+# ):
+#     return crud.create_user_item(db=db, item=item, user_id=user_id)
+
+# @app.get("/items/", response_model=List[schemas.Item])
+# def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db_session)):
+#     items = crud.get_items(db, skip=skip, limit=limit)
+#     return items

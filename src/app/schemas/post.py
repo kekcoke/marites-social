@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
 
-class Post(BaseModel):
+class PostSchema(BaseModel):
     id: Optional[str] = None
     title: str
     content: str
