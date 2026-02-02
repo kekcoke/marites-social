@@ -10,8 +10,7 @@ from sqlalchemy import (
     text
 )
 from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from src.app.db.connection import Base
 
 class Post(Base):
     """SQLAlchemy model for posts table"""

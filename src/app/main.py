@@ -21,8 +21,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from . import models, schemas
 
-from src.app.db.session import get_db_session
-
+from src.app.db import get_db_session
 
 # Automatically create the database tables if they do not exist
 models.Base.metadata.create_all(bind=engine)
