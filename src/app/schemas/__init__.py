@@ -1,3 +1,3 @@
-from .post import Post
+from .post import Post, CreatePost, UpdatePost
 
-__all__ = ["Post"]
+__all__ = ["Post", "CreatePost", "UpdatePost"]

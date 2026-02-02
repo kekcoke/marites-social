@@ -97,7 +97,7 @@ def root():
     return {"message": "welcome to my api"}
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_posts(post: schemas.Post, db: Session = Depends(get_db_session)):
+def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db_session)):
     """Create a new post in the database.
     """
     new_post = models.Post(
@@ -135,7 +135,7 @@ def get_post(id: int):
     return {"data": post}
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: schemas.Post, db: Session = Depends(get_db_session)):
+def update_post(id: int, post: schemas.UpdatePost, db: Session = Depends(get_db_session)):
     """Update a specific post by ID in the database."""
     post_query = db.query(models.Post).filter(models.Post.id == id)
     existing_post = post_query.first()

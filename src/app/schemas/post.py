@@ -13,7 +13,6 @@ class Post(BaseModel):
     rating: Optional[float] = None
     likes: int = 0
     comments: Optional[List[str]] = None
-    
     class Config:
         json_schema_extra = {
             "example": {
@@ -26,3 +25,13 @@ class Post(BaseModel):
                 "comments": []
             }
         }
+class CreatePost(BaseModel):
+    title: str
+    content: str
+    author: str
+
+class UpdatePost(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    author: Optional[str] = None
+    published: Optional[bool] = None
