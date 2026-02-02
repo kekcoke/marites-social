@@ -15,9 +15,10 @@ from fastapi import FastAPI, Depends, HTTPException, Response, status
 from fastapi.params import Body
 
 # Import SQLAlchemy & Pydantic
-from src.app.db.connection import engine, get_db_connection
-from src.app.models import post
+from src.app.db.connection import engine
+from sqlalchemy.orm import Session
 from src.app.models.post import Base
+from src.app.schemas.post import Post
 
 from src.app.db.session import get_db_session
 # from pydantic import BaseModel
