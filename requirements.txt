@@ -5,4 +5,4 @@ uvicorn
 python-dotenv
 sqlalchemy
 email-validator
-passlib[bcrypt]
+passlib[argon2]
