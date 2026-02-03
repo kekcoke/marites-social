@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends, logger, Response, status
 from sqlalchemy.orm import Session
+from app.auth import oauth2
 from .. import models, schemas, utils
 from ..db.session import get_db_session
 
@@ -13,7 +14,11 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
-def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db_session)):
+def create_posts(
+    post: schemas.CreatePost, 
+    db: Session = Depends(get_db_session),
+    user_id: int = Depends(oauth2.get_current_user)
+):
     """Create a new post in the database.
     """
     logger.info(f"Creating a new post with title: {post.title}")
@@ -28,7 +33,10 @@ def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db_session)
     return new_post
 
 @router.get("/latest", response_model=schemas.PostResponse)
-def get_latest_post(db: Session = Depends(get_db_session)):
+def get_latest_post(
+    db: Session = Depends(get_db_session),
+    user_id: int = Depends(oauth2.get_current_user)
+):
     """Get the most recently created post from the database."""
     post = db.query(models.Post).order_by(models.Post.created_at.desc()).first()
 
@@ -41,14 +49,23 @@ def get_latest_post(db: Session = Depends(get_db_session)):
     return post
     
 @router.get("/", response_model=List[schemas.PostResponse])
-def get_posts(db: Session = Depends(get_db_session), limit: int = 100, skip: int = 0):
+def get_posts(
+    db: Session = Depends(get_db_session), 
+    user_id: int = Depends(oauth2.get_current_user), 
+    limit: int = 100, 
+    skip: int = 0
+):
     """ Get all posts from the database."""
     posts = db.query(models.Post).offset(skip).limit(limit).all()  # ORM-based query to retrieve all posts.
 
     return posts
 
 @router.get("/{id}", response_model=schemas.PostResponse)
-def get_post(id: int, db: Session = Depends(get_db_session)):
+def get_post(
+    id: int, 
+    db: Session = Depends(get_db_session),
+    user_id: int = Depends(oauth2.get_current_user)
+):
     """Get a specific post by ID from the database."""
     post = db.query(models.Post).filter(models.Post.id == id).first()
 
@@ -59,7 +76,12 @@ def get_post(id: int, db: Session = Depends(get_db_session)):
     return post
 
 @router.put("/{id}", response_model=schemas.PostResponse)
-def update_post(id: int, post: schemas.UpdatePost, db: Session = Depends(get_db_session)):
+def update_post(
+    id: int, 
+    post: schemas.UpdatePost, 
+    db: Session = Depends(get_db_session),
+    user_id: int = Depends(oauth2.get_current_user)
+):
     """Update a specific post by ID in the database."""
     post_query = db.query(models.Post).filter(models.Post.id == id)
     existing_post = post_query.first()
@@ -83,7 +105,11 @@ def update_post(id: int, post: schemas.UpdatePost, db: Session = Depends(get_db_
     return existing_post
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db_session)):
+def delete_post(
+    id: int, 
+    db: Session = Depends(get_db_session),
+    user_id: int = Depends(oauth2.get_current_user)
+):
     """Delete a specific post by ID from the database."""
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post = post_query.first()
