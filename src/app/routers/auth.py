@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Response
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .. import models, schemas, utils, db
 from ..auth.oauth2 import create_access_token_and_expiry
@@ -11,23 +12,25 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 @router.post("/login", response_model=schemas.Token, status_code=status.HTTP_200_OK)
-def login(user_credentials: schemas.UserLogin, db: Session = Depends(db.get_db_session)):
+def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(db.get_db_session)):
     """Authenticate user and return a JWT token upon successful login.
     """
     logger.info(f"Attempting to log in user: {user_credentials.username}")
-    user = db.query(models.User).filter(models.User.username == user_credentials.username).first()
+    identifier = user_credentials.username
+    user = db.query(models.User).filter(
+        models.User.email == identifier).first()
 
     if not user:
-        logger.warning(f"Login failed: User {user_credentials.username} not found.")
+        logger.warning(f"Login failed: User {identifier} not found.")
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Invalid credentials"
         )
 
     if not utils.verify_password(user_credentials.password, user.hashed_password):
-        logger.warning(f"Login failed: Incorrect password for user {user_credentials.username}.")
+        logger.warning(f"Login failed: Incorrect password for user {identifier}.")
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Invalid credentials"
         )
 
@@ -47,11 +50,6 @@ def login(user_credentials: schemas.UserLogin, db: Session = Depends(db.get_db_s
 def logout(response: Response):
     """Logout user by clearing the authentication token.
     """
-    response.delete_cookie(
-        key="access_token",
-        httponly=True,
-        secure=True,
-        samesite="lax",
-    )
-    logger.info("Logout requested")
+    logger.info("User logged out successfully.")
+    response.delete_cookie(key="access_token")
     return {"message": "Successfully logged out"}
