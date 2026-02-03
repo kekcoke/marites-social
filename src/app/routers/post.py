@@ -6,10 +6,13 @@ from sqlalchemy.orm import Session
 from .. import models, schemas, utils
 from ..db.session import get_db_session
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/posts",
+    tags=["Posts"]
+)
 logger = logging.getLogger(__name__)
 
-@router.post("/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db_session)):
     """Create a new post in the database.
     """
@@ -24,7 +27,7 @@ def create_posts(post: schemas.CreatePost, db: Session = Depends(get_db_session)
     logger.info(f"Created new post with id: {new_post.id}")
     return new_post
 
-@router.get("/posts/latest")
+@router.get("/latest", response_model=schemas.PostResponse)
 def get_latest_post(db: Session = Depends(get_db_session)):
     """Get the most recently created post from the database."""
     post = db.query(models.Post).order_by(models.Post.created_at.desc()).first()
@@ -37,14 +40,14 @@ def get_latest_post(db: Session = Depends(get_db_session)):
 
     return post
     
-@router.get("/posts", response_model=List[schemas.PostResponse])
+@router.get("/", response_model=List[schemas.PostResponse])
 def get_posts(db: Session = Depends(get_db_session), limit: int = 100, skip: int = 0):
     """ Get all posts from the database."""
     posts = db.query(models.Post).offset(skip).limit(limit).all()  # ORM-based query to retrieve all posts.
 
     return posts
 
-@router.get("/posts/{id}", response_model=schemas.PostResponse)
+@router.get("/{id}", response_model=schemas.PostResponse)
 def get_post(id: int, db: Session = Depends(get_db_session)):
     """Get a specific post by ID from the database."""
     post = db.query(models.Post).filter(models.Post.id == id).first()
@@ -55,7 +58,7 @@ def get_post(id: int, db: Session = Depends(get_db_session)):
 
     return post
 
-@router.put("/posts/{id}", response_model=schemas.PostResponse)
+@router.put("/{id}", response_model=schemas.PostResponse)
 def update_post(id: int, post: schemas.UpdatePost, db: Session = Depends(get_db_session)):
     """Update a specific post by ID in the database."""
     post_query = db.query(models.Post).filter(models.Post.id == id)
@@ -79,7 +82,7 @@ def update_post(id: int, post: schemas.UpdatePost, db: Session = Depends(get_db_
 
     return existing_post
 
-@router.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db_session)):
     """Delete a specific post by ID from the database."""
     post_query = db.query(models.Post).filter(models.Post.id == id)

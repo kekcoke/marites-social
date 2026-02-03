@@ -5,10 +5,13 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..db.session import get_db_session
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/sqlalchemy",
+    tags=["SQLAlchemy"]
+)
 logger = logging.getLogger(__name__)
 
-@router.get("/sqlalchemy")
+@router.get("/posts")
 def test_sqlalchemy_posts(db: Session = Depends(get_db_session)):
     """Test SQLAlchemy ORM by retrieving all posts.
     """
@@ -16,7 +19,7 @@ def test_sqlalchemy_posts(db: Session = Depends(get_db_session)):
     result = db.query(models.Post).all()
     return {"data": result}
 
-@router.get("/sqlalchemy-test")
+@router.get("/posts/test_create_post")
 def test_post_via_sqlalchemy(db: Session = Depends(get_db_session)):
     """Test SQLAlchemy ORM by creating and retrieving a Post.
     """

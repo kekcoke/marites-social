@@ -4,10 +4,13 @@ from sqlalchemy.orm import Session
 from .. import models, schemas, utils
 from ..db.session import get_db_session
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"]
+)
 logger = logging.getLogger(__name__)
 
-@router.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session)):
     """Create a new user in the database.
     """
@@ -23,7 +26,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session))
     logger.info(f"Created new user with id: {new_user.id}")
     return new_user
 
-@router.get("/users/{user_id}", response_model=schemas.UserResponse)
+@router.get("/{user_id}", response_model=schemas.UserResponse)
 def get_user(user_id: str, db: Session = Depends(get_db_session)):
     """Retrieve a user by their ID.
     """
