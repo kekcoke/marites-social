@@ -184,10 +184,12 @@ def delete_post(id: int, db: Session = Depends(get_db_session)):
 
 @app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session)):
-    hashed = utils.hash_password(user.password)
-    user.password = hashed
+    """Create a new user in the database.
+    """
+    data = user.model_dump()
+    data["hashed_password"] = utils.hash_password(data.pop("password"))
 
-    new_user = models.User(**user.model_dump())
+    new_user = models.User(**data)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

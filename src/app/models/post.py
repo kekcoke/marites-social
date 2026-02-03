@@ -18,17 +18,17 @@ class Post(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
-    published = Column(Boolean, server_default="true", nullable=False)    
+    published = Column(Boolean, default=True, nullable=False)    
     author = Column(String(100), nullable=False)
     created_at = Column(
         DateTime(timezone=True),
-        server_default=text("now()"),
+        server_default=func.now(),
         nullable=False,
     )    
     updated_at = Column(
         DateTime(timezone=True),
-        server_default=text("now()"),
-        onupdate=text("now()"), #auto-update timestamp on modification
+        server_default=func.now(),
+        onupdate=func.now(), #auto-update timestamp on modification
         nullable=False,
     )
     rating = Column(Float, nullable=True)

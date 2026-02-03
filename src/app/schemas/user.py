@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 class UserBase(BaseModel):
     """Base schema for User with common fields"""
@@ -14,9 +15,9 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     """Schema for user responses - includes all database fields"""
-    id: str
+    id: UUID
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
     last_activity: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
