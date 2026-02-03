@@ -6,4 +6,4 @@ python-dotenv
 sqlalchemy
 email-validator
 passlib[argon2]
-pip install python-jose[cryptography]
+python-jose[cryptography]
