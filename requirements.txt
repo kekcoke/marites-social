@@ -6,3 +6,4 @@ python-dotenv
 sqlalchemy
 email-validator
 passlib[argon2]
+python-jose[cryptography]
