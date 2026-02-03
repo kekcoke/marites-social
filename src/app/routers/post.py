@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 from fastapi import APIRouter, HTTPException, Depends, logger, Response, status
 from sqlalchemy.orm import Session
-from app.auth import oauth2
+from ..auth import oauth2
 from .. import models, schemas, utils
 from ..db.session import get_db_session
 
