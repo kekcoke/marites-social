@@ -5,10 +5,13 @@ from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 load_dotenv()
 logger = logging.getLogger(__name__)
+
+# Central base for declarative models
+Base = declarative_base()
 
 class DatabaseConnectionError(Exception):
     """Raised when database connection fails."""

@@ -1,28 +1,56 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List
 
-class PostSchema(BaseModel):
-    id: Optional[str] = None
+class PostBase(BaseModel):
+    """Base schema for Post with common fields"""
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+    author: str = Field(..., min_length=1, max_length=100)
+    published: bool = Field(default=True, description="Published status")
+
+class CreatePost(BaseModel):
     title: str
     content: str
-    published: bool = True
     author: str
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    published: bool = True
+
+class UpdatePost(BaseModel):
+    """Schema for updating an existing post - all fields optional"""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    content: Optional[str] = Field(None, min_length=1)
+    author: Optional[str] = Field(None, min_length=1, max_length=100)
+    published: Optional[bool] = None
+
+class PostResponse(PostBase):
+    """Schema for post responses - includes all database fields"""
+    id: int
+    title: str
+    content: str
+    author: str
+    published: bool
+    created_at: datetime
+    updated_at: datetime
     rating: Optional[float] = None
     likes: int = 0
-    comments: Optional[List[str]] = None
-    
+    comments: Optional[str] = None
+
     class Config:
+        from_attributes = True  # Pydantic v2 (use orm_mode for v1)
         json_schema_extra = {
             "example": {
-                "id": "123",
+                "id": 1,
                 "title": "My First Post",
                 "content": "This is my first post content",
                 "author": "John Doe",
+                "published": True,
                 "created_at": "2024-01-15T10:30:00",
-                "likes": 5,
-                "comments": []
+                "updated_at": "2024-01-15T10:30:00",
+                "rating": None,
+                "likes": 0,
+                "comments": None
             }
         }
+
+# Alias for backward compatibility
+Post = PostResponse
