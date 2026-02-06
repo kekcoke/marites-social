@@ -1,7 +1,11 @@
-from pydantic import BaseSettings;
+from pathlib import Path
+from pydantic import ValidationError
+from pydantic_settings import BaseSettings;
+
+BASE_DIR = Path(__file__).resolve().parents[2]  # project_root
 
 class Config(BaseSettings):
-    database_url: str
+    db_database_url: str
     db_host: str
     db_name: str
     db_port: str
@@ -17,6 +21,6 @@ class Config(BaseSettings):
 
     class Config:
         # Load variables from .env file
-        env_file = "../.env"
+        env_file =  BASE_DIR / ".env"
 
 config = Config()

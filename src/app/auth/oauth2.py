@@ -4,18 +4,18 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from uuid import UUID
 from .. import schemas
-import os
+from .. import config
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=os.getenv("OAUTH_TOKEN_URL"))
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=config.config.oauth_token_url)
 
 def create_access_token_and_expiry(data: dict) -> tuple[str, int]:
     """Create a JWT access token.
     """
 
     try:
-        SECRET_KEY = os.environ["JWT_SECRET_KEY"]
-        ALGORITHM = os.environ["JWT_ALGORITHM"]
-        JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", 30))
+        SECRET_KEY = config.config.jwt_secret_key
+        ALGORITHM = config.config.jwt_algorithm
+        JWT_EXPIRATION_MINUTES = int(config.config.jwt_expires_minutes)
 
         if not SECRET_KEY:
             raise RuntimeError("JWT_SECRET_KEY not set")
@@ -40,8 +40,8 @@ def create_access_token_and_expiry(data: dict) -> tuple[str, int]:
 def verify_access_token(token: str, credentials_exception) -> UUID:
     """Verify a JWT access token."""
     try:
-        SECRET_KEY = os.environ["JWT_SECRET_KEY"]
-        ALGORITHM = os.environ["JWT_ALGORITHM"]
+        SECRET_KEY = config.config.jwt_secret_key
+        ALGORITHM = config.config.jwt_algorithm
 
         if not SECRET_KEY:
             raise RuntimeError("JWT_SECRET_KEY not set")

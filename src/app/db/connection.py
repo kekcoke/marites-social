@@ -1,13 +1,11 @@
 import logging
-import os
 import psycopg2
-from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from config import config
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 
 # Central base for declarative models
@@ -22,13 +20,13 @@ def get_db_connection():
     """
     try:
         conn = psycopg2.connect(
-            host=os.getenv("DB_HOST"),
-            database=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USERNAME"),
-            password=os.getenv("DB_PASSWORD"),
-            port=os.getenv("DB_PORT"),
-            connect_timeout=os.getenv("CONNECT_TIMEOUT"),
-            sslmode=os.getenv("SSL_MODE"),
+            host=config.db_host,
+            database=config.db_name,
+            user=config.db_username,
+            password=config.db_password,
+            port=config.db_port,
+            connect_timeout=config.db_connect_timeout,
+            sslmode=config.db_ssl_mode,
             cursor_factory=RealDictCursor
         )
         logger.info("Database connection established.")
@@ -38,7 +36,7 @@ def get_db_connection():
         raise DatabaseConnectionError("Failed to connect to the database") from e
 
 # Build SQLAlchemy engine and session
-DATABASE_URL = os.getenv("DATABASE_URL") 
+DATABASE_URL = config.db_database_url
 
 connect_args={
     "connect_timeout": 10,
@@ -63,9 +61,6 @@ SessionLocal = sessionmaker(
     autoflush=False,
     expire_on_commit=False,
     bind=engine)
-
-# Base class for declarative models
-Base = declarative_base()
 
 def get_db_session() -> Session:
     """Provide a transactional scope around a series of operations."""

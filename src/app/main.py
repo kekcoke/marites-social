@@ -1,4 +1,3 @@
-import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import logging
@@ -6,11 +5,6 @@ import sys
 from datetime import datetime
 from passlib.context import CryptContext
 from random import randrange
-
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 # FastAPI imports
 from fastapi import FastAPI, Depends, HTTPException, Response, status
@@ -22,6 +16,9 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from . import models
 
+# Env variables
+from config import config
+
 from src.app.db import get_db_session
                            
 # Automatically create the database tables if they do not exist
@@ -32,7 +29,7 @@ models.Base.metadata.create_all(bind=engine)
 from .routers import post, user, sqlalchemy, auth
 
 # Logging configuration
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = config.log_level
 LOG_FORMAT = ("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logging.basicConfig(
     level=LOG_LEVEL,
