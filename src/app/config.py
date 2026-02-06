@@ -13,6 +13,7 @@ class Config(BaseSettings):
     jwt_algorithm: str
     jwt_expires_minutes: int
     oauth_token_url: str
+    log_level: str
 
     class Config:
         # Load variables from .env file
