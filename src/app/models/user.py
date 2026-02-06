@@ -7,6 +7,7 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from src.app.db.connection import Base
 
 class User(Base):
@@ -46,6 +47,12 @@ class User(Base):
     deleted_at = Column(
         DateTime(timezone=True),
         nullable=True
+    )
+
+    posts = relationship(
+        "Post",
+        back_populates="user",
+        passive_deletes=True
     )
 
     def __repr__(self):

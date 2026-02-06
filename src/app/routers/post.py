@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
-from typing import List
-from fastapi import APIRouter, HTTPException, Depends, logger, Response, status
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Depends, logger, Response, status, Query
 from sqlalchemy.orm import Session
 from ..auth import oauth2
 from .. import models, schemas, utils
@@ -23,6 +23,7 @@ def create_posts(
     """
     logger.info(f"Creating a new post with title: {post.title}")
     new_post = models.Post(
+        user_id=user_id,
         **post.model_dump()
     )
     db.add(new_post)
@@ -52,11 +53,29 @@ def get_latest_post(
 def get_posts(
     db: Session = Depends(get_db_session), 
     user_id: int = Depends(oauth2.get_current_user), 
-    limit: int = 100, 
-    skip: int = 0
+    limit: int = Query(100, ge=1, le=100), 
+    skip: int = Query(0, ge=0),
+    title: Optional[str]= Query(
+        None,
+        description="Filter posts by title"
+    )
 ):
     """ Get all posts from the database."""
-    posts = db.query(models.Post).offset(skip).limit(limit).all()  # ORM-based query to retrieve all posts.
+    posts = db.query(models.Post)\
+    
+    if title:
+        title = title.strip()
+
+        if len(title) < 2:
+            raise HTTPException(status_code=400, detail="Title too short")
+        
+        query = query.filter(models.Post.title.like(f"%{title}%"))
+
+    posts = (
+        query.offset(skip)\
+            .limit(limit)\
+            .all()  # ORM-based query to retrieve all posts.
+    ) 
 
     return posts
 
@@ -118,6 +137,12 @@ def delete_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id: {id} does not exist"
+        )
+    
+    if post.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform requested action"
         )
 
     post_query.delete(synchronize_session=False)
