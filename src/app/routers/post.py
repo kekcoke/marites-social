@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, logger, Response, status
 from sqlalchemy.orm import Session
 from ..auth import oauth2
@@ -54,10 +54,15 @@ def get_posts(
     db: Session = Depends(get_db_session), 
     user_id: int = Depends(oauth2.get_current_user), 
     limit: int = 100, 
-    skip: int = 0
+    skip: int = 0,
+    title: Optional[str]= ""
 ):
     """ Get all posts from the database."""
-    posts = db.query(models.Post).filter(models.Post.user_id == user_id).offset(skip).limit(limit).all()  # ORM-based query to retrieve all posts.
+    posts = db.query(models.Post)\
+        .filter(models.Post.title.contains(title))\
+        .offset(skip)\
+        .limit(limit)\
+        .all()  # ORM-based query to retrieve all posts.
 
     return posts
 
