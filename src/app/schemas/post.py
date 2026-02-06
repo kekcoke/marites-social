@@ -34,7 +34,7 @@ class PostResponse(PostBase):
     updated_at: datetime
     user_id: UUID
     rating: Optional[float] = None
-    likes: int = 0
+    votes: int = 0
     comments: Optional[str] = None
 
     class Config:
@@ -49,7 +49,7 @@ class PostResponse(PostBase):
                 "created_at": "2024-01-15T10:30:00",
                 "updated_at": "2024-01-15T10:30:00",
                 "rating": None,
-                "likes": 0,
+                "votes": 0,
                 "comments": None
             }
         }

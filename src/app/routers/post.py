@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, logger, Response, status, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from ..auth import oauth2
 from .. import models, schemas, utils
@@ -92,7 +93,14 @@ def get_post(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Post with id: {id} was not found")
 
-    return post
+    # Join posts with votes
+    result = db.query(models.Post, 
+                      func.count(models.Vote.post_id)\
+                            .label("votes")\
+                            .join(models.Vote, models.Vote.post_id == models.Post.id)\
+                            .first()
+    )
+    return result
 
 @router.put("/{id}", response_model=schemas.PostResponse)
 def update_post(

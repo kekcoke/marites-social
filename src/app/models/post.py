@@ -40,7 +40,7 @@ class Post(Base):
     )
 
     rating = Column(Float, nullable=True)
-    likes = Column(Integer, server_default="0", nullable=False)
+    votes = Column(Integer, server_default="0", nullable=False)
     comments = Column(Text, nullable=True)
 
     # set relationship
