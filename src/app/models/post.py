@@ -11,6 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from src.app.db.connection import Base
+from sqlalchemy.orm import relationship
 
 class Post(Base):
     """SQLAlchemy model for posts table"""
@@ -41,6 +42,9 @@ class Post(Base):
     rating = Column(Float, nullable=True)
     likes = Column(Integer, server_default="0", nullable=False)
     comments = Column(Text, nullable=True)
+
+    # set relationship
+    user = relationship("User", back_populates="posts")
 
     def __repr__(self):
         return f"<Post(id={self.id}, title='{self.title}', author='{self.author}')>"
