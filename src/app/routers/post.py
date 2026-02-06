@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, logger, Response, status
+from fastapi import APIRouter, HTTPException, Depends, logger, Response, status, Query
 from sqlalchemy.orm import Session
 from ..auth import oauth2
 from .. import models, schemas, utils
@@ -55,14 +55,23 @@ def get_posts(
     user_id: int = Depends(oauth2.get_current_user), 
     limit: int = 100, 
     skip: int = 0,
-    title: Optional[str]= ""
+    title: Optional[str]= Query(
+        None,
+        description="Filter posts by title"
+    )
 ):
     """ Get all posts from the database."""
     posts = db.query(models.Post)\
-        .filter(models.Post.title.contains(title))\
-        .offset(skip)\
-        .limit(limit)\
-        .all()  # ORM-based query to retrieve all posts.
+    
+    if title:
+        title = title.strip()
+        query = query.filter(models.Post.title.like(f"%{title}%"))
+
+    posts = (
+        query.offset(skip)\
+            .limit(limit)\
+            .all()  # ORM-based query to retrieve all posts.
+    ) 
 
     return posts
 
