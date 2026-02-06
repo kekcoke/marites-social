@@ -37,6 +37,10 @@ class Post(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
+
+    # Automatically fetch the User based on owner_id.
+    # user = relationship("User")
+
     rating = Column(Float, nullable=True)
     likes = Column(Integer, server_default="0", nullable=False)
     comments = Column(Text, nullable=True)

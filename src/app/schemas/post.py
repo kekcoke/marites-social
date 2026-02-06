@@ -2,6 +2,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List
+# from app.schemas.user import User
 
 class PostBase(BaseModel):
     """Base schema for Post with common fields"""
@@ -33,6 +34,7 @@ class PostResponse(PostBase):
     created_at: datetime
     updated_at: datetime
     user_id: UUID
+    # user: User,
     rating: Optional[float] = None
     likes: int = 0
     comments: Optional[str] = None
