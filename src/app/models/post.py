@@ -10,7 +10,6 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.dialects.postgresql import UUID
-
 from src.app.db.connection import Base
 
 class Post(Base):
@@ -35,8 +34,7 @@ class Post(Base):
     )
     user_id = Column(
         UUID(as_uuid=True), 
-        ForeignKey("users.id", 
-        ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
     rating = Column(Float, nullable=True)
