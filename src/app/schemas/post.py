@@ -1,3 +1,4 @@
+from uuid import UUID
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List
@@ -31,6 +32,7 @@ class PostResponse(PostBase):
     published: bool
     created_at: datetime
     updated_at: datetime
+    user_id: UUID
     rating: Optional[float] = None
     likes: int = 0
     comments: Optional[str] = None

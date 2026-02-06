@@ -23,6 +23,7 @@ def create_posts(
     """
     logger.info(f"Creating a new post with title: {post.title}")
     new_post = models.Post(
+        user_id=user_id,
         **post.model_dump()
     )
     db.add(new_post)
@@ -56,7 +57,7 @@ def get_posts(
     skip: int = 0
 ):
     """ Get all posts from the database."""
-    posts = db.query(models.Post).offset(skip).limit(limit).all()  # ORM-based query to retrieve all posts.
+    posts = db.query(models.Post).filter(models.Post.user_id == user_id).offset(skip).limit(limit).all()  # ORM-based query to retrieve all posts.
 
     return posts
 
@@ -118,6 +119,12 @@ def delete_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id: {id} does not exist"
+        )
+    
+    if post.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform requested action"
         )
 
     post_query.delete(synchronize_session=False)
