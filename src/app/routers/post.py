@@ -53,8 +53,8 @@ def get_latest_post(
 def get_posts(
     db: Session = Depends(get_db_session), 
     user_id: int = Depends(oauth2.get_current_user), 
-    limit: int = 100, 
-    skip: int = 0,
+    limit: int = Query(100, ge=1, le=100), 
+    skip: int = Query(0, ge=0),
     title: Optional[str]= Query(
         None,
         description="Filter posts by title"
@@ -65,6 +65,10 @@ def get_posts(
     
     if title:
         title = title.strip()
+
+        if len(title) < 2:
+            raise HTTPException(status_code=400, detail="Title too short")
+        
         query = query.filter(models.Post.title.like(f"%{title}%"))
 
     posts = (
