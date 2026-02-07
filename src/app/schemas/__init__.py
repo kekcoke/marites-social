@@ -1,6 +1,8 @@
 from .post import Post, CreatePost, UpdatePost, PostResponse
 from .user import UserCreate, UserResponse, UserLogin, User
 from .token import Token, TokenData
+from .vote import Vote
+
 __all__ = [
     "Post", 
     "CreatePost", 
@@ -11,5 +13,6 @@ __all__ = [
     "UserResponse",
     "User",
     "Token",
-    "TokenData"
+    "TokenData",
+    "Vote"
 ]

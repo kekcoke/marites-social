@@ -26,7 +26,7 @@ models.Base.metadata.create_all(bind=engine)
 
 
 # Import routers
-from .routers import post, user, sqlalchemy, auth
+from .routers import post, user, sqlalchemy, auth, vote
 
 # Logging configuration
 LOG_LEVEL = config.log_level
@@ -51,6 +51,7 @@ app.include_router(post.router)
 app.include_router(user.router)
 app.include_router(sqlalchemy.router)
 app.include_router(auth.router)
+app.include_router(vote.router)
 
 @app.get("/db-test")
 def db_test(db: Session = Depends(get_db_session)):

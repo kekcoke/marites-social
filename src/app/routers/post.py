@@ -94,12 +94,20 @@ def get_post(
                             detail=f"Post with id: {id} was not found")
 
     # Join posts with votes
-    result = db.query(models.Post, 
-                      func.count(models.Vote.post_id)\
-                            .label("votes")\
-                            .join(models.Vote, models.Vote.post_id == models.Post.id)\
-                            .first()
+    result = (
+        db.query(
+            models.Post,
+            func.count(models.Vote.post_id).label("votes")
+        )
+        .join(
+            models.Vote,
+            models.Vote.post_id == models.Post.id,
+            isouter=True
+        )
+        .group_by(models.Post.id)
+        .first()
     )
+
     return result
 
 @router.put("/{id}", response_model=schemas.PostResponse)
