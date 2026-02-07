@@ -7,8 +7,8 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 from src.app.db.connection import Base
+from sqlalchemy.orm import relationship
 
 class User(Base):
     """SQLAlchemy model for users table"""
