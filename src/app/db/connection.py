@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
-from config import config
+from ..config import config
 
 logger = logging.getLogger(__name__)
 
