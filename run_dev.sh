@@ -15,8 +15,10 @@ pip install --upgrade pip
 
 if [ -f requirements.txt ]; then
     pip install -r requirements.txt
-    pip install -e .
 fi
+
+# Install app package
+pip install -e .
 
 # Ensure the src directory is in the PYTHONPATH
 export PYTHONPATH="${PYTHONPATH}:$(pwd)/src/app"
