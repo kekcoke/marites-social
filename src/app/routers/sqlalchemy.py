@@ -2,8 +2,8 @@ import logging
 import datetime
 from fastapi import APIRouter, HTTPException, Depends, logger, status
 from sqlalchemy.orm import Session
-from .. import models
-from ..db.session import get_db_session
+from app import models
+from app.db.session import get_db_session
 
 router = APIRouter(
     prefix="/sqlalchemy",

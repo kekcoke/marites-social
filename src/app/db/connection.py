@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
-from ..config import config
+from app.config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ def get_db_connection():
     """Establish a connection to the database using environment variables.
     """
     try:
+        config = get_config()
         conn = psycopg2.connect(
             host=config.db_host,
             database=config.db_name,
@@ -36,7 +37,7 @@ def get_db_connection():
         raise DatabaseConnectionError("Failed to connect to the database") from e
 
 # Build SQLAlchemy engine and session
-DATABASE_URL = config.db_database_url
+DATABASE_URL = get_config().db_database_url
 
 connect_args={
     "connect_timeout": 10,

@@ -1,8 +1,8 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends, logger, status
 from sqlalchemy.orm import Session
-from .. import models, schemas, utils
-from ..db.session import get_db_session
+from app import models, schemas, utils
+from app.db.session import get_db_session
 
 router = APIRouter(
     prefix="/users",
