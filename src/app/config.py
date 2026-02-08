@@ -1,6 +1,7 @@
 from pathlib import Path
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings;
+from functools import lru_cache
 
 BASE_DIR = Path(__file__).resolve().parents[2]  # project_root
 
@@ -23,4 +24,6 @@ class Config(BaseSettings):
         # Load variables from .env file
         env_file =  BASE_DIR / ".env"
 
-config = Config()
+@lru_cache
+def get_config() -> Config:
+    return Config()

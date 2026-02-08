@@ -3,9 +3,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from uuid import UUID
-from .. import schemas
-from ..config import config
+from app.config import get_config
 
+config = get_config()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=config.oauth_token_url)
 
 def create_access_token_and_expiry(data: dict) -> tuple[str, int]:

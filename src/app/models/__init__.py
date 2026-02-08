@@ -1,4 +1,4 @@
-from src.app.db.connection import Base
+from app.db.connection import Base
 from .post import Post
 from .user import User
 from .votes import Vote

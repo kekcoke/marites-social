@@ -17,8 +17,8 @@ if [ -f requirements.txt ]; then
     pip install -r requirements.txt
 fi
 
-# Ensure the src directory is in the PYTHONPATH
-export PYTHONPATH="${PYTHONPATH}:$(pwd)/src/app"
+# Install app package
+pip install -e .
 
 # ---------- Find free port ----------
 PORT=$START_PORT
@@ -42,7 +42,7 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # ---------- Start server ----------
-uvicorn src.app.main:app \
+uvicorn app.main:app \
   --env-file .env \
   --reload \
   --host "$HOST" \

@@ -11,15 +11,16 @@ from fastapi import FastAPI, Depends, HTTPException, Response, status
 from fastapi.params import Body
 
 # Import SQLAlchemy & Pydantic
-from src.app.db.connection import engine
+from app.db.connection import engine
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from . import models
 
 # Env variables
-from config import config
+from app.config import get_config
+config = get_config()
 
-from src.app.db import get_db_session
+from app.db import get_db_session
                            
 # Automatically create the database tables if they do not exist
 models.Base.metadata.create_all(bind=engine)

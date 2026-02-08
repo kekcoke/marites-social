@@ -7,7 +7,7 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.dialects.postgresql import UUID
-from src.app.db.connection import Base
+from app.db.connection import Base
 from sqlalchemy.orm import relationship
 
 class User(Base):

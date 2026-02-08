@@ -4,7 +4,7 @@ from sqlalchemy import (
     Integer
 )
 from sqlalchemy.dialects.postgresql import UUID
-from src.app.db.connection import Base
+from app.db.connection import Base
 
 class Vote(Base):
     __tablename__ = "votes"

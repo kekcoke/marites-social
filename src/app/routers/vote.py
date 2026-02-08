@@ -2,7 +2,7 @@ import logging
 from uuid import UUID
 from fastapi import status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from .. import models, db, schemas, auth
+from app import models, db, schemas, auth
 
 router = APIRouter(
     prefix="/vote",
