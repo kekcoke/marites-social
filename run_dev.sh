@@ -20,9 +20,6 @@ fi
 # Install app package
 pip install -e .
 
-# Ensure the src directory is in the PYTHONPATH
-export PYTHONPATH="${PYTHONPATH}:$(pwd)/src/app"
-
 # ---------- Find free port ----------
 PORT=$START_PORT
 while lsof -i :"$PORT" >/dev/null 2>&1; do
@@ -45,7 +42,7 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # ---------- Start server ----------
-uvicorn src.app.main:app \
+uvicorn app.main:app \
   --env-file .env \
   --reload \
   --host "$HOST" \
