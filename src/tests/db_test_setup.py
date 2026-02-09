@@ -12,8 +12,6 @@ SQLALCHEMY_DB_URL = f'{get_config().db_database_url}_test'
 engine = create_engine(SQLALCHEMY_DB_URL)
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base.metadata.create_all(bind=engine)
-
 
 def override_get_db_test():
     db = TestingSessionLocal()
@@ -27,4 +25,9 @@ app.dependencies_overrides[get_db_session] = override_get_db_test()
 
 @pytest.fixture()
 def client():
-    return TestClient(app)
+    # Setup: Create all tables before the test runs
+    Base.metadata.create_all(bind=engine)
+    yield TestClient(app)
+
+    # Teardown: Drop all tables after the test finishes
+    Base.metadata.drop_all(bind=engine)
