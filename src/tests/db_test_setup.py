@@ -25,9 +25,6 @@ app.dependencies_overrides[get_db_session] = override_get_db_test()
 
 @pytest.fixture()
 def client():
-    # Setup: Create all tables before the test runs
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield TestClient(app)
-
-    # Teardown: Drop all tables after the test finishes
-    Base.metadata.drop_all(bind=engine)
