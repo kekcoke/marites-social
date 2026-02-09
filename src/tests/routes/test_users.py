@@ -1,10 +1,7 @@
 import faker
 import random
-from fastapi.testclient import TestClient
-from app.main import app
 from app import schemas
 
-client = TestClient(app)
 fake = faker.Faker()
 
 def test_create_user():
