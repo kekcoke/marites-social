@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 from app.db import get_db_session, Base
 from app.config import get_config
@@ -24,4 +25,6 @@ def override_get_db_test():
 # Replace db with test on app
 app.dependencies_overrides[get_db_session] = override_get_db_test()
 
-client = TestClient(app)
+@pytest.fixture()
+def client():
+    return TestClient(app)
