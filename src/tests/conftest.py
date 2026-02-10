@@ -122,35 +122,43 @@ def test_user_2(db_session, user_payload_2):
     }
 
 @pytest.fixture
-def token(test_user):
+def access_token(test_user):
     """Generate access token for test user"""
-    access_token = oauth2.create_access_token_and_expiry(
-        data={"user_id": str(test_user["user"].id)}
+    access_token, _ = oauth2.create_access_token_and_expiry(
+        data={"sub": str(test_user["user"].id)}
     )
     return access_token
 
 @pytest.fixture
-def token_2(test_user_2):
+def access_token_2(test_user_2):
     """Generate access token for second test user"""
-    access_token = oauth2.create_access_token_and_expiry(
-        data={"user_id": str(test_user_2["user"].id)}
+    access_token, _ = oauth2.create_access_token_and_expiry(
+        data={"sub": str(test_user_2["user"].id)}
     )
     return access_token
 
 @pytest.fixture
-def authorized_client(client, token):
+def authorized_client(client, access_token):
     """Create client with authorization header"""
-    client.headers = {
-        **client.headers,
-        "Authorization": f"Bearer {token}"
-    }
+    client.headers.update(
+        {"Authorization": f"Bearer {access_token}"}
+    )
     return client
 
 @pytest.fixture
-def authorized_client_2(client, token_2):
+def authorized_client_2(client, access_token_2):
     """Create client with authorization header for second user"""
-    client.headers = {
-        **client.headers,
-        "Authorization": f"Bearer {token_2}"
-    }
+    client.headers.update(
+        {"Authorization": f"Bearer {access_token_2}"}
+    )
     return client
+
+# Post fixtures
+@pytest.fixture
+def post_payload():
+    """Generate random post payload"""
+    return {
+        "title": fake.sentence(nb_words=6),
+        "content": fake.paragraph(nb_sentences=5),
+        "published": True
+    }

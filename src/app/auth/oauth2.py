@@ -26,7 +26,7 @@ def create_access_token_and_expiry(data: dict) -> tuple[str, int]:
 
         to_encode = data.copy()
         to_encode.update({
-            "sub": str(data.get("user_id")),
+            "sub": str(data.get("sub")),
             "iat": utc_now,
             "exp": expire
         })
@@ -47,7 +47,7 @@ def verify_access_token(token: str, credentials_exception) -> UUID:
             raise RuntimeError("JWT_SECRET_KEY not set")
 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("user_id")
+        user_id: str = payload.get("sub")
 
         if user_id is None:
             raise credentials_exception

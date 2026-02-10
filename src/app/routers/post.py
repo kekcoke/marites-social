@@ -21,18 +21,41 @@ def create_posts(
     user_id: int = Depends(oauth2.get_current_user)
 ):
     """Create a new post in the database.
+    
+    Args:
+        post: Post creation data
+        db: Database session
+        user_id: Current authenticated user's ID
+        
+    Returns:
+        Created post object
+        
+    Raises:
+        HTTPException 401: If user not authenticated
+        HTTPException 422: If validation fails
+        HTTPException 500: If database error occurs
     """
-    logger.info(f"Creating a new post with title: {post.title}")
-    new_post = models.Post(
-        user_id=user_id,
-        **post.model_dump()
-    )
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
+    logger.info(f"User {user_id} creating post with title: {post.title}")
 
-    logger.info(f"Created new post with id: {new_post.id}")
-    return new_post
+    try:
+
+        new_post = models.Post(
+            user_id=user_id,
+            **post.model_dump()
+        )
+        db.add(new_post)
+        db.commit()
+        db.refresh(new_post)
+
+        logger.info(f"Created new post with id: {new_post.id}")
+        return new_post
+
+    except Exception as e:
+        logger.error(f"Unexpected error creating post: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
 
 @router.get("/latest", response_model=schemas.PostResponse)
 def get_latest_post(

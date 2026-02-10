@@ -35,7 +35,7 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
         )
 
     access_token, expires_in = create_access_token_and_expiry(
-        data={"user_id": str(user.id)}
+        data={"sub": str(user.id)}
     )
 
     logger.info(f"User {user_credentials.username} logged in successfully.")
