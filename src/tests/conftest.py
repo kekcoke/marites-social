@@ -13,7 +13,7 @@ from app.config import get_config
 from app import models, schemas, utils
 from app.auth import oauth2
 
-faker = Faker()
+fake = Faker()
 
 # Test db setup
 SQLALCHEMY_DB_URL = f'{get_config().db_database_url}_test'
@@ -56,3 +56,30 @@ def client(db_session):
     """Create a test client with fresh db"""
     with TestClient(app) as c:
         yield c
+
+# User fixtures
+@pytest.fixture()
+def user_payload():
+    """Generate random user payload"""
+    fname = fake.first_name()
+    lname = fake.last_name()
+    username = f"{fname}.{lname}".lower()
+    
+    return {
+        "username": username,
+        "email": f"{username}@email.com",
+        "password": fake.password(length=12),
+    }
+
+@pytest.fixture
+def user_payload_2():
+    """Generate second user payload for multi-user tests"""
+    fname = fake.first_name()
+    lname = fake.last_name()
+    username = f"{fname}.{lname}".lower()
+    
+    return {
+        "username": username,
+        "email": f"{username}@email.com",
+        "password": fake.password(length=12),
+    }
