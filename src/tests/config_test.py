@@ -1,5 +1,5 @@
+# src/tests/config_test.py
 import pytest
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
@@ -29,7 +29,7 @@ def override_get_db_test():
         db.close()
 
 # Replace db with test on app
-app.dependencies_overrides[get_db_session] = override_get_db_test()
+app.dependency_overrides[get_db_session] = override_get_db_test
 
 @pytest.fixture(scope="function")
 def client():

@@ -1,8 +1,9 @@
+# src/tests/routes/test_users.py
 import pytest
 from faker import Faker
 from app import schemas
 
-fake = faker.Faker()
+fake = Faker()
 
 @pytest.fixture
 def user_payload():
