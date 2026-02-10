@@ -120,3 +120,21 @@ def test_user_2(db_session, user_payload_2):
         "user": new_user,
         "password": user_payload_2["password"]
     }
+
+@pytest.fixture
+def token(test_user):
+    """Generate access token for test user"""
+    access_token = oauth2.create_access_token(
+        data={"user_id": str(test_user["user"].id)}
+    )
+    return access_token
+
+@pytest.fixture
+def token_2(test_user_2):
+    """Generate access token for second test user"""
+    access_token = oauth2.create_access_token(
+        data={"user_id": str(test_user_2["user"].id)}
+    )
+    return access_token
+
+
