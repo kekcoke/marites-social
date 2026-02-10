@@ -68,21 +68,20 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session))
         logger.info(f"Successfully created user with id: {new_user.id}")
         return new_user
     
-    except HTTPException:
-        raise
     except IntegrityError as e:
-        db.rollback()
-        logger.error(f"Database integrity error: {str(e)}")
+        logger.warning(f"Database integrity error: {str(e)}", exc_info=True)
 
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email or username already exists"
         )
     
+    except HTTPException:
+        raise
+
     except Exception as e:
-        db.rollback()
         logger.error(f"Unexpected error creating user: {str(e)}")
-        
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while creating the user"
@@ -92,13 +91,42 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db_session))
 @router.get("/{user_id}", response_model=schemas.UserResponse)
 def get_user(user_id: str, db: Session = Depends(get_db_session)):
     """Retrieve a user by their ID.
+    
+    Args:
+        user_id: User's unique identifier
+        db: Database session
+        
+    Returns:
+        User object
+        
+    Raises:
+        HTTPException 404: If user not found
+        HTTPException 422: If user_id format is invalid
+        HTTPException 500: If database error occurs
     """
     logger.info(f"Retrieving user with ID: {user_id}")
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    try: 
+        user = db.query(models.User).filter(models.User.id == user_id).first()
 
-    return user
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        return user
+    
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Invalid user id format: {user_id}, error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Invalid user id format: {user_id}"
+    )
+    except Exception as e:
+        logger.error(f"Unexpected error retrieving user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while retrieving the user"
+        )

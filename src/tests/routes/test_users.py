@@ -76,3 +76,41 @@ class TestUserCreation:
         response_data = res.json()
         assert "password" not in response_data
         assert "hashed_password" not in response_data
+
+
+class TestUserIntegration:
+    """Integration tests for user workflows"""
+    
+    def test_create_and_login_worfklow(self, client, user_payload):
+        """Test complete workflow: create user then login"""
+        # Create user
+        create_res = client.post("/users/", json=user_payload)
+        assert create_res.status_code == 201
+        user = schemas.UserResponse(**create_res.json())
+        
+        # Login with created user
+        login_res = client.post(
+            "/login",
+            data={
+                "username": user_payload["email"],
+                "password": user_payload["password"],
+            },
+        )
+        assert login_res.status_code == 200
+        assert "access_token" in login_res.json()
+
+    def test_multiple_users_creation(self, client, user_payload, user_payload_2):
+        """Test creating multiple users"""
+        # Create both users
+        res1 = client.post("/users/", json=user_payload)
+        assert res1.status_code == 201
+        
+        res2 = client.post("/users/", json=user_payload_2)
+        assert res2.status_code == 201
+        
+        # Verify
+        user1 = schemas.UserResponse(**res1.json())
+        user2 = schemas.UserResponse(**res2.json())
+        assert user1.id != user2.id
+        assert user1.email != user2.email
+        
