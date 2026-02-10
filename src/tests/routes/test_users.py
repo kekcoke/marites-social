@@ -20,9 +20,7 @@ def user_payload():
 @pytest.fixture
 def created_user(client, user_payload):
     res = client.post("/users/", json=user_payload)
-
     assert res.status_code == 201
-
     user = schemas.UserResponse(**res.json())
 
     return {

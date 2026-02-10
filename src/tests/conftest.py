@@ -28,8 +28,13 @@ def override_get_db_test():
     finally:
         db.close()
 
-# Replace db with test on app
-app.dependency_overrides[get_db_session] = override_get_db_test
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database():
+    # Replace db with test on app
+    app.dependency_overrides[get_db_session] = override_get_db_test
+    yield
+    app.dependency_overrides.clear()
 
 @pytest.fixture(scope="function")
 def client():
