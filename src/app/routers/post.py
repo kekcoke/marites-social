@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends, logger, Response, status, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 def create_posts(
     post: schemas.CreatePost, 
     db: Session = Depends(get_db_session),
-    user_id: int = Depends(oauth2.get_current_user)
+    user_id: UUID = Depends(oauth2.get_current_user)
 ):
     """Create a new post in the database.
     
@@ -60,7 +61,7 @@ def create_posts(
 @router.get("/latest", response_model=schemas.PostResponse)
 def get_latest_post(
     db: Session = Depends(get_db_session),
-    user_id: int = Depends(oauth2.get_current_user)
+    user_id: UUID = Depends(oauth2.get_current_user)
 ):
     """Get the most recently created post from the database."""
     post = db.query(models.Post).order_by(models.Post.created_at.desc()).first()
@@ -76,7 +77,7 @@ def get_latest_post(
 @router.get("/", response_model=List[schemas.PostResponse])
 def get_posts(
     db: Session = Depends(get_db_session), 
-    user_id: int = Depends(oauth2.get_current_user), 
+    user_id: UUID = Depends(oauth2.get_current_user), 
     limit: int = Query(100, ge=1, le=100), 
     skip: int = Query(0, ge=0),
     title: Optional[str]= Query(
@@ -107,7 +108,7 @@ def get_posts(
 def get_post(
     id: int, 
     db: Session = Depends(get_db_session),
-    user_id: int = Depends(oauth2.get_current_user)
+    user_id: UUID = Depends(oauth2.get_current_user)
 ):
     """Get a specific post by ID from the database."""
     post = db.query(models.Post).filter(models.Post.id == id).first()
@@ -138,7 +139,7 @@ def update_post(
     id: int, 
     post: schemas.UpdatePost, 
     db: Session = Depends(get_db_session),
-    user_id: int = Depends(oauth2.get_current_user)
+    user_id: UUID = Depends(oauth2.get_current_user)
 ):
     """Update a specific post by ID in the database."""
     post_query = db.query(models.Post).filter(models.Post.id == id)
@@ -166,7 +167,7 @@ def update_post(
 def delete_post(
     id: int, 
     db: Session = Depends(get_db_session),
-    user_id: int = Depends(oauth2.get_current_user)
+    user_id: UUID = Depends(oauth2.get_current_user)
 ):
     """Delete a specific post by ID from the database."""
     post_query = db.query(models.Post).filter(models.Post.id == id)
