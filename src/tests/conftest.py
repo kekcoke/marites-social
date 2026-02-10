@@ -58,7 +58,7 @@ def client(db_session):
         yield c
 
 # User fixtures
-@pytest.fixture()
+@pytest.fixture
 def user_payload():
     """Generate random user payload"""
     fname = fake.first_name()
@@ -82,4 +82,41 @@ def user_payload_2():
         "username": username,
         "email": f"{username}@email.com",
         "password": fake.password(length=12),
+    }
+
+@pytest.fixture
+def test_user(db_session, user_payload):
+    """Create a user directly in database"""
+    hashed_password = utils.hash_password(user_payload["password"])
+    new_user = models.User(
+        username=user_payload["username"],
+        email=user_payload["email"],
+        hashed_password=hashed_password
+    )
+    db_session.add(new_user)
+    db_session.commit()
+    db_session.refresh(new_user)
+    
+    return {
+        "user": new_user,
+        "password": user_payload["password"]
+    }
+
+
+@pytest.fixture
+def test_user_2(db_session, user_payload_2):
+    """Create a second user for multi-user tests"""
+    hashed_password = utils.hash_password(user_payload_2["password"])
+    new_user = models.User(
+        username=user_payload_2["username"],
+        email=user_payload_2["email"],
+        hashed_password=hashed_password
+    )
+    db_session.add(new_user)
+    db_session.commit()
+    db_session.refresh(new_user)
+    
+    return {
+        "user": new_user,
+        "password": user_payload_2["password"]
     }
