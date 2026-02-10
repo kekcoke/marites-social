@@ -36,6 +36,15 @@ class TestCreatePost:
         res = authorized_client.post("/posts/", json=incomplete_payload)
         
         assert res.status_code == 422
+
+    def test_create_post_missing_author(self, authorized_client, post_payload):
+        """Test creating post without author"""
+        incomplete_payload = post_payload.copy()
+        del incomplete_payload["author"]
+        
+        res = authorized_client.post("/posts/", json=incomplete_payload)
+        
+        assert res.status_code == 422
     
     def test_create_post_missing_content(self, authorized_client, post_payload):
         """Test creating post without content"""
