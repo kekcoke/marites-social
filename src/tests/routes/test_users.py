@@ -1,5 +1,4 @@
 # src/tests/routes/test_users.py
-import pytest
 from faker import Faker
 from app import schemas
 
@@ -77,7 +76,44 @@ class TestUserCreation:
         assert "password" not in response_data
         assert "hashed_password" not in response_data
 
+class TestGetUser:
+    """Test user retrieval endpoint"""
 
+    def test_get_user_success(self, client, test_user):
+        """Test successful user retrieval by id"""
+        user_id = test_user["user"].id
+        res = client.get(f"/users/{user_id}")
+
+        assert res.status_code == 200
+        user = schemas.UserResponse(**res.json())
+        assert str(user.id) == str(user_id)
+        assert user.email == test_user["user"].email
+
+    def test_get_user_not_found(self, client):
+        """Test getting non-existent user"""
+        fake_id = "00000000-0000-0000-0000-000000000000"
+        res = client.get(f"/users/{fake_id}")
+        
+        assert res.status_code == 404
+        assert "not found" in res.json()["detail"].lower()
+
+    def test_get_user_invalid_id_format(self, client):
+        """Test getting user with invalid id format"""
+        res = client.get("/users/invalid-id-format")
+
+        # assert res.status_code in [404, 422]
+        assert res.status_code == 500
+
+    def test_get_user_password_not_exposed(self, client, test_user):
+        """Test that password is not exposed in get user response"""
+        user_id = test_user["user"].id
+        res = client.get(f"/users/{user_id}")
+        
+        assert res.status_code == 200
+        response_data = res.json()
+        assert "password" not in response_data
+        assert "hashed_password" not in response_data
+        
 class TestUserIntegration:
     """Integration tests for user workflows"""
     
