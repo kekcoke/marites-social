@@ -63,16 +63,41 @@ def get_latest_post(
     db: Session = Depends(get_db_session),
     user_id: UUID = Depends(oauth2.get_current_user)
 ):
-    """Get the most recently created post from the database."""
-    post = db.query(models.Post).order_by(models.Post.created_at.desc()).first()
-
-    if not post:
+    """Get the most recently created post from the database.
+    
+    Args:
+        db: Database session
+        user_id: Current authenticated user's ID
+        
+    Returns:
+        Most recent post object
+        
+    Raises:
+        HTTPException 404: If no posts found
+        HTTPException 500: If database error occurs
+    """
+    try:
+        post = db.query(models.Post).order_by(models.Post.created_at.desc()).first()
+        
+        if not post:
+            logger.info("No posts found in database")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No posts found"
+            )
+        
+        logger.info(f"Retrieved latest post: {post.id}")
+        return post
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving latest post: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No posts found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while retrieving the latest post"
         )
 
-    return post
     
 @router.get("/", response_model=List[schemas.PostResponse])
 def get_posts(
