@@ -23,14 +23,14 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
     if not user:
         logger.warning(f"Login failed: User {identifier} not found.")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid credentials"
         )
 
     if not utils.verify_password(user_credentials.password, user.hashed_password):
         logger.warning(f"Login failed: Incorrect password for user {identifier}.")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid credentials"
         )
 

@@ -113,7 +113,66 @@ class TestGetUser:
         response_data = res.json()
         assert "password" not in response_data
         assert "hashed_password" not in response_data
+    
+
+class TestUserLogin:
+    """Test user login endpoint"""
+
+    def test_login_success(self, client, test_user):
+        """Test successful login"""
+        res = client.post(
+            "/login",
+            data={
+                "username": test_user["user"].email,
+                "password": test_user["password"],
+            },
+        )
         
+        assert res.status_code == 200
+        token_data = res.json()
+        assert "access_token" in token_data
+        assert token_data["token_type"] == "bearer"
+
+    def test_login_wrong_password(self, client, test_user):
+        """Test login with incorrect password"""
+        res = client.post(
+            "/login",
+            data={
+                "username": test_user["user"].email,
+                "password": "wrong_pwd",
+            },
+        )
+        assert res.status_code == 403
+
+    def test_login_nonexistent_user(self, client):
+        """Test login with nonexistent email"""
+        res = client.post(
+            "/login",
+            data={
+                "username": "nonexistent@email.com",
+                "password": "some_pwd",
+            },
+        )
+        assert res.status_code == 403
+
+    def test_login_missing_credentials(self, client):
+        """Test login without credentials"""
+        res = client.post("/login", data={})
+        
+        assert res.status_code == 422
+    
+    def test_login_empty_password(self, client, test_user):
+        """Test login with empty password"""
+        res = client.post(
+            "/login",
+            data={
+                "username": test_user["user"].email,
+                "password": "",
+            },
+        )
+        
+        assert res.status_code in [403, 422]
+    
 class TestUserIntegration:
     """Integration tests for user workflows"""
     
