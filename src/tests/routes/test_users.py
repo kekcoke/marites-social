@@ -2,6 +2,8 @@
 import pytest
 from faker import Faker
 from app import schemas
+from jose import jwt
+from app.config import get_config
 
 fake = Faker()
 
@@ -43,3 +45,11 @@ def test_login_user(client, created_user):
     )
 
     assert res.status_code == 200
+
+    login_res = schemas.Token(**res.json())
+    payload = jwt.decode(
+        login_res.access_token,
+        get_config().jwt_secret_key,
+        algorithms=get_config().jwt_algorithm)
+    id = payload.get("user_id")
+    assert login_res.token_type == "bearer"
