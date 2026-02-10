@@ -132,10 +132,10 @@ def access_token(test_user):
 @pytest.fixture
 def access_token_2(test_user_2):
     """Generate access token for second test user"""
-    access_token, _ = oauth2.create_access_token_and_expiry(
+    access_token_2, _ = oauth2.create_access_token_and_expiry(
         data={"sub": str(test_user_2["user"].id)}
     )
-    return access_token
+    return access_token_2
 
 @pytest.fixture
 def authorized_client(client, access_token):
@@ -160,5 +160,6 @@ def post_payload():
     return {
         "title": fake.sentence(nb_words=6),
         "content": fake.paragraph(nb_sentences=5),
+        "author": f"{fake.first_name()} {fake.last_name()}",
         "published": True
     }

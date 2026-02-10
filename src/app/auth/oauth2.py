@@ -22,12 +22,13 @@ def create_access_token_and_expiry(data: dict) -> tuple[str, int]:
 
         utc_now = datetime.now(timezone.utc)
         expires_in = JWT_EXPIRATION_MINUTES * 60
-        expire = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+        expire = int((utc_now + timedelta(seconds=expires_in)).timestamp())
+        issued_at = int(utc_now.timestamp())
 
         to_encode = data.copy()
         to_encode.update({
             "sub": str(data.get("sub")),
-            "iat": utc_now,
+            "iat": issued_at,
             "exp": expire
         })
 
