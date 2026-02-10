@@ -137,4 +137,20 @@ def token_2(test_user_2):
     )
     return access_token
 
+@pytest.fixture
+def authorized_client(client, token):
+    """Create client with authorization header"""
+    client.headers = {
+        **client.headers,
+        "Authorization": f"Bearer {token}"
+    }
+    return client
 
+@pytest.fixture
+def authorized_client_2(client, token_2):
+    """Create client with authorization header for second user"""
+    client.headers = {
+        **client.headers,
+        "Authorization": f"Bearer {token_2}"
+    }
+    return client
