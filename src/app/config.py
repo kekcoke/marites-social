@@ -6,7 +6,6 @@ from functools import lru_cache
 BASE_DIR = Path(__file__).resolve().parents[2]  # project_root
 
 class Config(BaseSettings):
-    db_database_url: str
     db_host: str
     db_name: str
     db_port: str
@@ -19,6 +18,7 @@ class Config(BaseSettings):
     jwt_expires_minutes: int
     oauth_token_url: str
     log_level: str
+    db_database_url: str = f"postgresql://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}"
 
     class Config:
         # Load variables from .env file
