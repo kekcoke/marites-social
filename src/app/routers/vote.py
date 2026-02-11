@@ -103,3 +103,47 @@ def vote(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred"
         )
+
+@router.get("/user", status_code=status.HTTP_200_OK)
+def get_user_votes(
+    db: Session = Depends(db.get_db_session),
+    current_user: UUID = Depends(auth.oauth2.get_current_user),
+    limit: int = 100,
+    skip: int = 0
+):
+    """Get all posts the current user has voted on.
+    
+    Args:
+        db: Database session
+        current_user: Current authenticated user object
+        limit: Maximum number of votes to return
+        skip: Number of votes to skip
+        
+    Returns:
+        List of posts the user has voted on
+        
+    Raises:
+        HTTPException 500: If database error occurs
+    """
+    logger.info(f"Getting votes for user {current_user}")
+    
+    try:
+        votes = db.query(models.Vote).filter(
+            models.Vote.user_id == current_user
+        ).offset(skip).limit(limit).all()
+        
+        post_ids = [vote.post_id for vote in votes]
+        
+        logger.info(f"User {current_user} has voted on {len(post_ids)} posts")
+        return {
+            "user_id": current_user,
+            "voted_posts": post_ids,
+            "count": len(post_ids)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting votes for user {current_user}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while retrieving user votes"
+        )
