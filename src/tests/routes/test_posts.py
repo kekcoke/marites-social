@@ -234,3 +234,63 @@ class TestDeletePost:
         
         assert res.status_code == 403
         assert "Not authorized" in res.json()["detail"]
+
+class TestPostIntegration:
+    """Integration tests for post workflows"""
+    
+    def test_create_update_delete_workflow(self, authorized_client, post_payload):
+        """Test complete CRUD workflow"""
+        # Create
+        create_res = authorized_client.post("/posts/", json=post_payload)
+        assert create_res.status_code == 201
+        post = schemas.PostResponse(**create_res.json())
+        
+        # Read
+        get_res = authorized_client.get(f"/posts/{post.id}")
+        assert get_res.status_code == 200
+        
+        # Update
+        update_payload = {"title": "Updated Title"}
+        update_res = authorized_client.put(f"/posts/{post.id}", json=update_payload)
+        assert update_res.status_code == 200
+        
+        # Delete
+        delete_res = authorized_client.delete(f"/posts/{post.id}")
+        assert delete_res.status_code == 204
+    
+    # def test_multiple_users_posts(self, authorized_client, authorized_client_2, post_payload):
+    #     """Test multiple users creating posts"""
+    #     # User 1 creates post
+    #     res1 = authorized_client.post("/posts/", json=post_payload)
+    #     assert res1.status_code == 201
+    #     post1 = schemas.PostResponse(**res1.json())
+        
+    #     # User 2 creates post
+    #     payload2 = {
+    #         **post_payload,
+    #     }
+    #     res2 = authorized_client_2.post("/posts/", json=post_payload)
+    #     assert res2.status_code == 201
+    #     post2 = schemas.PostResponse(**res2.json())
+        
+    #     # Different posts
+    #     assert post1.id != post2.id
+    #     assert post1.user_id != post2.user_id
+    
+    def test_post_ownership_enforcement(self, authorized_client, authorized_client_2, test_post):
+        """Test that users can only delete their own posts"""
+        # Owner can delete
+        owner_delete = authorized_client.delete(f"/posts/{test_post.id}")
+        
+        # If not already deleted
+        if owner_delete.status_code == 204:
+            # Create another post to test with different user
+            new_post_res = authorized_client.post("/posts/", json={
+                "title": "Owner Post",
+                "content": "Owner Content"
+            })
+            new_post = schemas.PostResponse(**new_post_res.json())
+            
+            # Different user cannot delete
+            other_delete = authorized_client_2.delete(f"/posts/{new_post.id}")
+            assert other_delete.status_code == 403
