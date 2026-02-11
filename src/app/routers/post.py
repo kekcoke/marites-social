@@ -114,24 +114,61 @@ def get_posts(
         description="Filter posts by title"
     )
 ):
-    """ Get all posts from the database."""
-    posts = db.query(models.Post)
+    """Get a specific post by ID from the database.
     
-    if title:
-        title = title.strip()
-
-        if len(title) < 2:
-            raise HTTPException(status_code=400, detail="Title too short")
+    Args:
+        id: Post ID
+        db: Database session
+        user_id: Current authenticated user's ID
         
-        query = query.filter(models.Post.title.like(f"%{title}%"))
+    Returns:
+        Post object with vote count
+        
+    Raises:
+        HTTPException 404: If post not found
+        HTTPException 500: If database error occurs
+    """
+    logger.info(f"User {user_id} retrieving post {id}")
+    
+    try:
+        # First check if post exists
+        post = db.query(models.Post).filter(models.Post.id == id).first()
+        
+        if not post:
+            logger.warning(f"Post not found: {id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Post with id {id} was not found"
+            )
+        
+        # Get post with vote count
+        result = (
+            db.query(
+                models.Post,
+                func.count(models.Vote.post_id).label("votes")
+            )
+            .join(
+                models.Vote,
+                models.Vote.post_id == models.Post.id,
+                isouter=True
+            )
+            .filter(models.Post.id == id)
+            .group_by(models.Post.id)
+            .first()
+        )
+        
+        logger.info(f"Successfully retrieved post {id} with {result.votes} votes")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving post {id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while retrieving the post"
+        )
 
-    posts = (
-        query.offset(skip)\
-            .limit(limit)\
-            .all()  # ORM-based query to retrieve all posts.
-    ) 
-
-    return posts
 
 @router.get("/{id}", response_model=schemas.PostResponse)
 def get_post(
@@ -161,7 +198,9 @@ def get_post(
         .first()
     )
 
-    return result
+    post.votes = result[1]
+
+    return post
 
 @router.put("/{id}", response_model=schemas.PostResponse)
 def update_post(
