@@ -201,3 +201,36 @@ class TestUpdatePost:
         
         # Should be 403 Forbidden if ownership check is implemented
         assert res.status_code in [200, 403]
+
+class TestDeletePost:
+    """Test post deletion endpoint"""
+    
+    def test_delete_post_success(self, authorized_client, test_post):
+        """Test successfully deleting own post"""
+        res = authorized_client.delete(f"/posts/{test_post.id}")
+        
+        assert res.status_code == 204
+        
+        # Verify post is deleted
+        get_res = authorized_client.get(f"/posts/{test_post.id}")
+        assert get_res.status_code == 404
+    
+    def test_delete_post_not_found(self, authorized_client):
+        """Test deleting non-existent post"""
+        res = authorized_client.delete("/posts/99999")
+        
+        assert res.status_code == 404
+    
+    def test_delete_post_unauthorized(self, client, test_post):
+        """Test deleting post without authentication"""
+        res = client.delete(f"/posts/{test_post.id}")
+        
+        assert res.status_code == 401
+    
+    def test_delete_post_wrong_user(self, authorized_client_2, test_post):
+        """Test deleting post created by different user"""
+        # test_post belongs to test_user, but we're using authorized_client_2
+        res = authorized_client_2.delete(f"/posts/{test_post.id}")
+        
+        assert res.status_code == 403
+        assert "Not authorized" in res.json()["detail"]
