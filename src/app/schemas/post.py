@@ -31,10 +31,10 @@ class PostResponse(PostBase):
     author: str
     published: bool
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     user_id: UUID
     rating: Optional[float] = None
-    votes: int = 0
+    votes: Optional[int] = None
     comments: Optional[str] = None
 
     class Config:

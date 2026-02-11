@@ -1,20 +1,24 @@
 # src/tests/config_test.py
 import pytest
+import uuid
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
+
+from faker import Faker
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.db import Base, get_db_session
 from app.config import get_config
+from app import models, schemas, utils
+from app.auth import oauth2
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+fake = Faker()
 
+# Test db setup
 SQLALCHEMY_DB_URL = f'{get_config().db_database_url}_test'
-
 engine = create_engine(SQLALCHEMY_DB_URL)
-
 TestingSessionLocal = sessionmaker(
     autocommit=False, 
     autoflush=False, 
@@ -22,12 +26,12 @@ TestingSessionLocal = sessionmaker(
 )
 
 def override_get_db_test():
+    """Override db dependency for testing"""
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
@@ -37,9 +41,178 @@ def setup_test_database():
     app.dependency_overrides.clear()
 
 @pytest.fixture(scope="function")
-def client():
+def db_session():
+    """Create a fresh db session for each test"""
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-
+    
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+    
+@pytest.fixture(scope="function")
+def client(db_session):
+    """Create a test client with fresh db"""
     with TestClient(app) as c:
         yield c
+
+# User fixtures
+@pytest.fixture
+def user_payload():
+    """Generate random user payload"""
+    fname = fake.first_name()
+    lname = fake.last_name()
+    username = f"{fname}.{lname}".lower()
+    
+    return {
+        "username": username,
+        "email": f"{username}@email.com",
+        "password": fake.password(length=12),
+    }
+
+@pytest.fixture
+def user_payload_2():
+    """Generate second user payload for multi-user tests"""
+    fname = fake.first_name()
+    lname = fake.last_name()
+    username = f"{fname}.{lname}".lower()
+    
+    return {
+        "username": username,
+        "email": f"{username}@email.com",
+        "password": fake.password(length=12),
+    }
+
+@pytest.fixture
+def test_user(db_session, user_payload):
+    """Create a user directly in database"""
+    hashed_password = utils.hash_password(user_payload["password"])
+    new_user = models.User(
+        username=user_payload["username"],
+        email=user_payload["email"],
+        hashed_password=hashed_password
+    )
+    db_session.add(new_user)
+    db_session.commit()
+    db_session.refresh(new_user)
+    
+    return {
+        "user": new_user,
+        "password": user_payload["password"]
+    }
+
+
+@pytest.fixture
+def test_user_2(db_session, user_payload_2):
+    """Create a second user for multi-user tests"""
+    hashed_password = utils.hash_password(user_payload_2["password"])
+    new_user = models.User(
+        username=user_payload_2["username"],
+        email=user_payload_2["email"],
+        hashed_password=hashed_password
+    )
+    db_session.add(new_user)
+    db_session.commit()
+    db_session.refresh(new_user)
+    
+    return {
+        "user": new_user,
+        "password": user_payload_2["password"]
+    }
+
+@pytest.fixture
+def access_token(test_user):
+    """Generate access token for test user"""
+    access_token, _ = oauth2.create_access_token_and_expiry(
+        data={"sub": str(test_user["user"].id)}
+    )
+    return access_token
+
+@pytest.fixture
+def access_token_2(test_user_2):
+    """Generate access token for second test user"""
+    access_token_2, _ = oauth2.create_access_token_and_expiry(
+        data={"sub": str(test_user_2["user"].id)}
+    )
+    return access_token_2
+
+@pytest.fixture
+def authorized_client(client, access_token):
+    """Create client with authorization header"""
+    client.headers.update(
+        {"Authorization": f"Bearer {access_token}"}
+    )
+    return client
+
+@pytest.fixture
+def authorized_client_2(client, access_token_2):
+    """Create client with authorization header for second user"""
+    client.headers.update(
+        {"Authorization": f"Bearer {access_token_2}"}
+    )
+    return client
+
+# Post fixtures
+@pytest.fixture
+def post_payload():
+    """Generate random post payload"""
+    return {
+        "title": fake.sentence(nb_words=6),
+        "content": fake.paragraph(nb_sentences=5),
+        "author": f"{fake.first_name()} {fake.last_name()}",
+        "published": True
+    }
+
+@pytest.fixture
+def test_post(db_session, test_user):
+    """Create a single test post"""
+    post = models.Post(
+        title="Test Post",
+        content="Test Content",
+        user_id=test_user["user"].id,
+        published=True,
+        author="Author"
+    )
+    db_session.add(post)
+    db_session.commit()
+    db_session.refresh(post)
+    return post
+
+@pytest.fixture
+def test_posts(db_session, test_user, test_user_2):
+    """Create multiple test posts"""
+    posts_data = [
+        {"title": "First post", "content": "First content", "user_id": test_user["user"].id, "published": True, "author": "Author"},
+        {"title": "Second post", "content": "Second content", "user_id": test_user["user"].id, "published": True, "author": "Author"},
+        {"title": "Third post", "content": "Third content", "user_id": test_user_2["user"].id, "published": True, "author": "Author"},
+        {"title": "Fourth post", "content": "Fourth content", "user_id": test_user_2["user"].id, "published": True, "author": "Author"},
+    ]
+    posts = []
+
+    for post_data in posts_data:
+        post = models.Post(**post_data)
+        db_session.add(post)
+        posts.append(post)
+    
+    db_session.commit()
+    
+    for post in posts:
+        db_session.refresh(post)
+    
+    return posts
+
+# Vote fixtures
+# Vote fixtures
+@pytest.fixture
+def test_vote(db_session, test_post, test_user):
+    """Create a test vote"""
+    vote = models.Vote(
+        post_id=test_post.id,
+        user_id=test_user["user"].id
+    )
+    db_session.add(vote)
+    db_session.commit()
+    db_session.refresh(vote)
+    return vote
