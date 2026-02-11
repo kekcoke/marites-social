@@ -275,24 +275,53 @@ def delete_post(
     db: Session = Depends(get_db_session),
     user_id: UUID = Depends(oauth2.get_current_user)
 ):
-    """Delete a specific post by ID from the database."""
-    post_query = db.query(models.Post).filter(models.Post.id == id)
-    post = post_query.first()
-
-    if post is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id: {id} does not exist"
-        )
+    """Delete a specific post by ID from the database.
     
-    if post.user_id != user_id:
+    Args:
+        id: Post ID
+        db: Database session
+        user_id: Current authenticated user's ID
+        
+    Returns:
+        No content (204)
+        
+    Raises:
+        HTTPException 404: If post not found
+        HTTPException 403: If user doesn't own the post
+        HTTPException 500: If database error occurs
+    """
+    logger.info(f"User {user_id} deleting post {id}")
+    
+    try:
+        post_query = db.query(models.Post).filter(models.Post.id == id)
+        post = post_query.first()
+        
+        if post is None:
+            logger.warning(f"Post not found for deletion: {id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Post with id {id} does not exist"
+            )
+        
+        if post.user_id != user_id:
+            logger.warning(f"User {user_id} attempted to delete post {id} owned by {post.user_id}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to perform requested action"
+            )
+        
+        post_query.delete(synchronize_session=False)
+        db.commit()
+        
+        logger.info(f"Successfully deleted post {id}")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error deleting post {id}: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to perform requested action"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
         )
-
-    post_query.delete(synchronize_session=False)
-    db.commit()
-    logger.info(f"Deleted post with id: {id}")
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
