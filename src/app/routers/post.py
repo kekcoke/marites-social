@@ -209,27 +209,65 @@ def update_post(
     db: Session = Depends(get_db_session),
     user_id: UUID = Depends(oauth2.get_current_user)
 ):
-    """Update a specific post by ID in the database."""
-    post_query = db.query(models.Post).filter(models.Post.id == id)
-    existing_post = post_query.first()
-
-    if existing_post is None:
+    """Update a specific post by ID in the database.
+    
+    Args:
+        id: Post ID
+        post: Post update data
+        db: Database session
+        user_id: Current authenticated user's ID
+        
+    Returns:
+        Updated post object
+        
+    Raises:
+        HTTPException 404: If post not found
+        HTTPException 403: If user doesn't own the post
+        HTTPException 500: If database error occurs
+    """
+    logger.info(f"User {user_id} updating post {id}")
+    
+    try:
+        post_query = db.query(models.Post).filter(models.Post.id == id)
+        existing_post = post_query.first()
+        
+        if existing_post is None:
+            logger.warning(f"Post not found for update: {id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Post with id {id} does not exist"
+            )
+        
+        # SECURITY FIX: Check ownership
+        if existing_post.user_id != user_id:
+            logger.warning(f"User {user_id} attempted to update post {id} owned by {existing_post.user_id}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to update this post"
+            )
+        
+        # Update post
+        update_data = post.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(existing_post, key, value)
+        
+        existing_post.updated_at = datetime.utcnow()
+        
+        db.commit()
+        db.refresh(existing_post)
+        
+        logger.info(f"Successfully updated post {id}")
+        return existing_post
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error updating post {id}: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id: {id} does not exist"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
         )
 
-    post_query.update(post.model_dump(exclude_unset=True))
-
-    for key, value in post.model_dump().items():
-        setattr(existing_post, key, value)
-    existing_post.updated_at = datetime.utcnow()
-
-    db.commit()
-    db.refresh(existing_post)
-    logger.info(f"Updated post with id: {id}")
-
-    return existing_post
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(
