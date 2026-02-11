@@ -106,3 +106,18 @@ venv.bak/
 .idea
 
 .vagrant
+
+# macOS system files
+.DS_Store
+**/ .DS_Store
+
+# Python Virtual Environment
+marites-venv/
+
+# Test artifacts (the folder 't' containing keys and secrets)
+t/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
