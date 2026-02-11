@@ -80,3 +80,28 @@ class TestCreatePost:
         post = schemas.PostResponse(**res.json())
         # Default should be True based on common patterns
         assert hasattr(post, 'published')
+
+class TestGetLatestPost:
+    """Test get latest post endpoint"""
+    
+    def test_get_latest_post_success(self, authorized_client, test_posts):
+        """Test getting the most recent post"""
+        res = authorized_client.get("/posts/latest")
+        
+        assert res.status_code == 200
+        post = schemas.PostResponse(**res.json())
+        # Should be the last created post
+        assert post.id == test_posts[-1].id
+    
+    def test_get_latest_post_empty_database(self, authorized_client):
+        """Test getting latest post when no posts exist"""
+        res = authorized_client.get("/posts/latest")
+        
+        assert res.status_code == 404
+        assert "No posts found" in res.json()["detail"]
+    
+    def test_get_latest_post_unauthorized(self, client, test_posts):
+        """Test getting latest post without authentication"""
+        res = client.get("/posts/latest")
+        
+        assert res.status_code == 401

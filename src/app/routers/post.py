@@ -77,7 +77,11 @@ def get_latest_post(
         HTTPException 500: If database error occurs
     """
     try:
-        post = db.query(models.Post).order_by(models.Post.created_at.desc()).first()
+        post = db.query(models.Post)\
+            .order_by(
+                models.Post.created_at.desc(),
+                models.Post.id.desc()
+            ).first()
         
         if not post:
             logger.info("No posts found in database")
@@ -111,7 +115,7 @@ def get_posts(
     )
 ):
     """ Get all posts from the database."""
-    posts = db.query(models.Post)\
+    posts = db.query(models.Post)
     
     if title:
         title = title.strip()

@@ -163,3 +163,26 @@ def post_payload():
         "author": f"{fake.first_name()} {fake.last_name()}",
         "published": True
     }
+
+@pytest.fixture
+def test_posts(db_session, test_user, test_user_2):
+    """Create multiple test posts"""
+    posts_data = [
+        {"title": "First post", "content": "First content", "user_id": test_user["user"].id, "published": True, "author": "Author"},
+        {"title": "Second post", "content": "Second content", "user_id": test_user["user"].id, "published": True, "author": "Author"},
+        {"title": "Third post", "content": "Third content", "user_id": test_user_2["user"].id, "published": True, "author": "Author"},
+        {"title": "Fourth post", "content": "Fourth content", "user_id": test_user_2["user"].id, "published": True, "author": "Author"},
+    ]
+    posts = []
+
+    for post_data in posts_data:
+        post = models.Post(**post_data)
+        db_session.add(post)
+        posts.append(post)
+    
+    db_session.commit()
+    
+    for post in posts:
+        db_session.refresh(post)
+    
+    return posts
