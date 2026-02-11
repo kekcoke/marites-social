@@ -1,16 +1,15 @@
 version: "3"
 services:
   api:
-    build:
+    build: 
       context: .
-      target: dev
+      target: prod
     depends_on:
       - db
     ports:
       - "8000:8000"
-    volumes:
-      - ./:/usr/src/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: on-failure
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     environment:
       - DB_DATABASE_URL=${DB_DATABASE_URL}
       - DB_HOST=${DB_HOST}
