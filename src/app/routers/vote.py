@@ -51,7 +51,6 @@ def vote(
                 detail=f"Post with id {vote.post_id} does not exist"
             )
         
-        # FIX: Use current_user.id instead of current_user directly
         vote_query = db.query(models.Vote).filter(
             models.Vote.post_id == vote.post_id,
             models.Vote.user_id == current_user
@@ -68,7 +67,6 @@ def vote(
                     detail=f"User has already voted on post {vote.post_id}"
                 )
             
-            # FIX: Use current_user.id instead of current_user
             new_vote = models.Vote(
                 post_id=vote.post_id,
                 user_id=current_user
