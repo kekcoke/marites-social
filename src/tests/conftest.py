@@ -1,5 +1,6 @@
 # src/tests/config_test.py
 import pytest
+import uuid
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -165,6 +166,21 @@ def post_payload():
     }
 
 @pytest.fixture
+def test_post(db_session, test_user):
+    """Create a single test post"""
+    post = models.Post(
+        title="Test Post",
+        content="Test Content",
+        user_id=test_user["user"].id,
+        published=True,
+        author="Author"
+    )
+    db_session.add(post)
+    db_session.commit()
+    db_session.refresh(post)
+    return post
+
+@pytest.fixture
 def test_posts(db_session, test_user, test_user_2):
     """Create multiple test posts"""
     posts_data = [
@@ -186,3 +202,17 @@ def test_posts(db_session, test_user, test_user_2):
         db_session.refresh(post)
     
     return posts
+
+# Vote fixtures
+# Vote fixtures
+@pytest.fixture
+def test_vote(db_session, test_post, test_user):
+    """Create a test vote"""
+    vote = models.Vote(
+        post_id=test_post.id,
+        user_id=test_user["user"].id
+    )
+    db_session.add(vote)
+    db_session.commit()
+    db_session.refresh(vote)
+    return vote

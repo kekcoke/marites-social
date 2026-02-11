@@ -105,3 +105,40 @@ class TestGetLatestPost:
         res = client.get("/posts/latest")
         
         assert res.status_code == 401
+
+
+class TestGetSinglePost:
+    """Test get single post endpoint"""
+    
+    def test_get_post_success(self, authorized_client, test_post):
+        """Test getting a single post by ID"""
+        res = authorized_client.get(f"/posts/{test_post.id}")
+        
+        assert res.status_code == 200
+        post = res.json() # returns dict!
+        
+        assert post["id"] == test_post.id
+        assert post["title"] == test_post.title
+        assert "votes" in post
+    
+    def test_get_post_not_found(self, authorized_client):
+        """Test getting non-existent post"""
+        res = authorized_client.get("/posts/99999")
+        
+        assert res.status_code == 404
+        assert "not found" in res.json()["detail"].lower()
+    
+    def test_get_post_unauthorized(self, client, test_post):
+        """Test getting post without authentication"""
+        res = client.get(f"/posts/{test_post.id}")
+        
+        assert res.status_code == 401
+    
+    def test_get_post_with_votes(self, authorized_client, test_post, test_vote):
+        """Test getting post includes vote count"""
+        res = authorized_client.get(f"/posts/{test_post.id}")
+        
+        assert res.status_code == 200
+        post_data = res.json()
+        assert "votes" in post_data
+        assert post_data["votes"] >= 1
