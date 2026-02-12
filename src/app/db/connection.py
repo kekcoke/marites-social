@@ -37,7 +37,7 @@ def get_db_connection():
         raise DatabaseConnectionError("Failed to connect to the database") from e
 
 # Build SQLAlchemy engine and session
-DATABASE_URL = get_config().db_database_url
+DATABASE_URL = get_config().get_db_database_url()
 
 connect_args={
     "connect_timeout": 10,

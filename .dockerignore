@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+marites-venv/
+.env
+.git
+postgres_data/
+tests/
+build/
