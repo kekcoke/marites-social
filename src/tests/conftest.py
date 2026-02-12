@@ -1,9 +1,9 @@
 # src/tests/config_test.py
+import copy
 import pytest
-import uuid
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 
 from faker import Faker
 from fastapi.testclient import TestClient
@@ -11,13 +11,14 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.db import Base, get_db_session
 from app.config import get_config
-from app import models, schemas, utils
+from app import models, utils
 from app.auth import oauth2
 
 fake = Faker()
 
 # Test db setup
-SQLALCHEMY_DB_URL = f'{get_config().db_database_url}_test'
+# Replace this with URL of test database of standalone non-containerized environments.
+SQLALCHEMY_DB_URL = f'{get_config().get_db_database_url()}'
 engine = create_engine(SQLALCHEMY_DB_URL)
 TestingSessionLocal = sessionmaker(
     autocommit=False, 
@@ -141,29 +142,34 @@ def access_token_2(test_user_2):
 @pytest.fixture
 def authorized_client(client, access_token):
     """Create client with authorization header"""
-    client.headers.update(
+    auth_client = copy.copy(client)
+    auth_client.headers.update(
         {"Authorization": f"Bearer {access_token}"}
     )
-    return client
+    return auth_client
 
 @pytest.fixture
 def authorized_client_2(client, access_token_2):
     """Create client with authorization header for second user"""
-    client.headers.update(
+    auth_client = copy.copy(client)
+    auth_client.headers.update(
         {"Authorization": f"Bearer {access_token_2}"}
     )
-    return client
+    return auth_client
 
-# Post fixtures
+# Post fixtures.
+# Note: Create factory method to allow multiple creations in a single test.
 @pytest.fixture
 def post_payload():
     """Generate random post payload"""
-    return {
-        "title": fake.sentence(nb_words=6),
-        "content": fake.paragraph(nb_sentences=5),
-        "author": f"{fake.first_name()} {fake.last_name()}",
-        "published": True
-    }
+    def _create_payload():
+        return {
+            "title": fake.sentence(nb_words=6),
+            "content": fake.paragraph(nb_sentences=5),
+            "author": f"{fake.first_name()} {fake.last_name()}",
+            "published": True
+        }
+    return _create_payload
 
 @pytest.fixture
 def test_post(db_session, test_user):

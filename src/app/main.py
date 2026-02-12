@@ -1,14 +1,9 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
 import logging
 import sys
-from datetime import datetime
-from passlib.context import CryptContext
-from random import randrange
+
 
 # FastAPI imports
-from fastapi import FastAPI, Depends, HTTPException, Response, status
-from fastapi.params import Body
+from fastapi import FastAPI, Depends
 
 # Import SQLAlchemy & Pydantic
 from app.db.connection import engine
