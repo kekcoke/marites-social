@@ -162,14 +162,12 @@ def authorized_client_2(client, access_token_2):
 @pytest.fixture
 def post_payload():
     """Generate random post payload"""
-    def _create_payload():
-        return {
-            "title": fake.sentence(nb_words=6),
-            "content": fake.paragraph(nb_sentences=5),
-            "author": f"{fake.first_name()} {fake.last_name()}",
-            "published": True
-        }
-    return _create_payload
+    return {
+        "title": fake.sentence(nb_words=6),
+        "content": fake.paragraph(nb_sentences=5),
+        "author": f"{fake.first_name()} {fake.last_name()}",
+        "published": True
+    }
 
 @pytest.fixture
 def test_post(db_session, test_user):
