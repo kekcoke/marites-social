@@ -11,13 +11,13 @@ env:
   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
   DB_NAME: ${{ secrets.DB_NAME }}
   DB_USERNAME: ${{ secrets.DB_USERNAME }}
-  DB_CONNECT_TIMEOUT: ${{ DB_CONNECT_TIMEOUT }}
-  DB_SSL_MODE: ${{ vars.DB_SSL_MODE }}
+  DB_CONNECT_TIMEOUT: ${{ secrets.DB_CONNECT_TIMEOUT }}
+  DB_SSL_MODE: ${{ secrets.DB_SSL_MODE }}
   JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
   JWT_ALGORITHM: ${{ secrets.JWT_ALGORITHM }}
-  JWT_EXPIRES_MINUTES: ${{ vars.JWT_EXPIRES_MINUTES }}
-  OAUTH_TOKEN_URL: ${{ vars.OAUTH_TOKEN_URL }}
-  LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+  JWT_EXPIRES_MINUTES: ${{ secrets.JWT_EXPIRES_MINUTES }}
+  OAUTH_TOKEN_URL: ${{ secrets.OAUTH_TOKEN_URL }}
+  LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
 
 jobs:
   test:
