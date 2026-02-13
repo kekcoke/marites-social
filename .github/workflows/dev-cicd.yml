@@ -17,7 +17,7 @@ env:
   JWT_ALGORITHM: ${{ secrets.JWT_ALGORITHM }}
   JWT_EXPIRES_MINUTES: ${{ secrets.JWT_EXPIRES_MINUTES }}
   OAUTH_TOKEN_URL: ${{ secrets.OAUTH_TOKEN_URL }}
-  LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+  LOG_LEVEL: INFO
 
 jobs:
   test:
