@@ -5,7 +5,9 @@ on:
     branches:
       - main
     types:
+      - opened
       - closed
+
 env:
   DB_HOST: localhost
   DB_PORT: 5432
@@ -20,8 +22,8 @@ env:
   OAUTH_TOKEN_URL: ${{ secrets.OAUTH_TOKEN_URL }}
   LOG_LEVEL: INFO
   DOCKER_REGISTRY: docker.io
-  DOCKER_NAMESPACE: ${{ secrets.DOCKER_HUB_USERNAME }}
-  REPO_NAME: ${{ secrets.REPO_NAME }}
+  DOCKER_NAMESPACE: ${{ vars.DOCKER_HUB_USERNAME }}
+  REPO_NAME: ${{ vars.REPO_NAME }}
 
 jobs:
   test:
@@ -106,13 +108,6 @@ jobs:
     runs-on: ubuntu-latest
     if: success()
 
-    env:
-      DOCKER_REGISTRY: docker.io
-      DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ vars.REPO_NAME }}
-
-    outputs:
-      image-digest: ${{ steps.docker_build.outputs.digest }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -123,7 +118,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKER_NAMESPACE }}
+          username: ${{ env.DOCKER_NAMESPACE }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Build and Push
@@ -132,17 +127,13 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: |
-            ${{ vars.DOCKER_NAMESPACE }}/${{ vars.REPO_NAME }}:latest
-            ${{ vars.DOCKER_NAMESPACE }}/${{ vars.REPO_NAME }}:pr-${{ github.event.pull_request.number }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+            ${{ env.DOCKER_NAMESPACE }}/${{ env.REPO_NAME }}:latest
+            ${{ env.DOCKER_NAMESPACE }}/${{ env.REPO_NAME }}:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Image Digest
-        run: echo ${{ steps.docker_build.outputs.digest }} 
-      
       - name: Build Summary
         run: |
           echo "### 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
@@ -150,43 +141,35 @@ jobs:
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Registry** | ${{ env.DOCKER_REGISTRY }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Image** | ${{ env.DOCKER_NAMESPACE }}/${{ vars.REPO_NAME }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tags** | \`pr-${{ github.event.pull_request.number }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image** | ${{ env.DOCKER_NAMESPACE }}/${{ env.REPO_NAME }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tags** | \`latest\`, \`pr-${{ github.event.pull_request.number }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Digest** | \`${{ steps.docker_build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **PR Number** | #${{ github.event.pull_request.number }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Image Tags" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
           echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ${{ vars.DOCKER_NAMESPACE }}/${{ vars.REPO_NAME }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.DOCKER_NAMESPACE }}/${{ env.REPO_NAME }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
   cleanup-on-merged:
     name: Cleanup Docker Images when PR merged
     runs-on: ubuntu-latest
+    needs: build-and-push
     if: github.event.pull_request.merged == true
     
-    env:
-      IMAGE_TAG: pr-${{ github.event.pull_request.number }}
-
     steps:
       - name: Obtain Docker Hub JWT
         id: docker-auth
         run: |
           TOKEN=$(curl -s -X POST https://hub.docker.com/v2/users/login/ \
             -H "Content-Type: application/json" \
-            -d '{"username": "'"${{ vars.DOCKER_NAMESPACE }}"'", "password": "'"${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}"'"}' \
+            -d '{"username": "${{ env.DOCKER_NAMESPACE }}", "password": "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}"}' \
             | jq -r .token)
-
-          echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "DOCKER_TOKEN=$TOKEN" >> $GITHUB_ENV
 
       - name: Delete PR image tag from Docker Hub
         run: |
           curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
-            -H "Authorization: Bearer $TOKEN" \
-            https://hub.docker.com/v2/repositories/${vars.DOCKER_NAMESPACE}/${vars.REPO_NAME}/tags/${env.IMAGE_TAG}/
+            -H "Authorization: Bearer ${{ env.DOCKER_TOKEN }}" \
+            https://hub.docker.com/v2/repositories/${{ env.DOCKER_NAMESPACE }}/${{ env.REPO_NAME }}/tags/pr-${{ github.event.pull_request.number }}/
