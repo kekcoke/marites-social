@@ -1,3 +1,9 @@
+from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
+from typing import Optional, List
+from uuid import UUID
+from enum import Enum
+
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -30,12 +36,14 @@ class Event(Base):
         nullable=False,
         index=True
     )
+
     account_id = Column(
         UUID(as_uuid=True),
         ForeignKey("accounts.id", ondelete="CASCADE"),
         nullable=False,
         index=True
     )
+
     creator_user_id = Column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
