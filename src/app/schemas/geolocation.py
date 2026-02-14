@@ -1,3 +1,9 @@
+from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
+from typing import Optional, List
+from uuid import UUID
+from enum import Enum
+
 class GeolocationBase(BaseModel):
     """Base schema for Geolocation"""
     continent: str = Field(..., min_length=2, max_length=2)
