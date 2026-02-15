@@ -13,6 +13,29 @@ from app.db.connection import Base
 import uuid
 import enum
 
+class AccountRole(enum.Enum):
+    """Roles for account members"""
+    OWNER = "owner"
+    ADMIN = "admin"
+    MANAGER = "manager"
+    MEMBER = "member"
+    VIEWER = "viewer"
+
+
+class AccountType(enum.Enum):
+    """Account type classifications"""
+    CONSUMER = "consumer"
+    COMMUNITY = "community"
+    NGO = "ngo"
+    ENTERPRISE = "enterprise"
+    GOVERNMENT = "government"
+
+
+class SubscriptionTier(enum.Enum):
+    FREE = "free"
+    PRO = "pro"
+    BUSINESS = "business"
+
 class AccountMember(Base):
     """Junction table for account team members"""
     __tablename__ = "account_members"
@@ -39,30 +62,6 @@ class AccountMember(Base):
         Index('idx_account_member_user', 'user_id'),
         Index('idx_account_member_role', 'account_id', 'role'),
     )
-
-
-class AccountRole(enum.Enum):
-    """Roles for account members"""
-    OWNER = "owner"
-    ADMIN = "admin"
-    MANAGER = "manager"
-    MEMBER = "member"
-    VIEWER = "viewer"
-
-
-class AccountType(enum.Enum):
-    """Account type classifications"""
-    CONSUMER = "consumer"
-    COMMUNITY = "community"
-    NGO = "ngo"
-    ENTERPRISE = "enterprise"
-    GOVERNMENT = "government"
-
-
-class SubscriptionTier(enum.Enum):
-    FREE = "free"
-    PRO = "pro"
-    BUSINESS = "business"
 
 
 class Account(Base):
@@ -103,7 +102,7 @@ class Account(Base):
     
     # Subscription/tier information
     subscription_tier = Column(
-        SQLEnum(SubscriptionTier)
+        SQLEnum(SubscriptionTier),
         nullable=False,
         default=SubscriptionTier.FREE
     ) 
