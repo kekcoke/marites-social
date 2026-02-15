@@ -52,3 +52,32 @@ UVICORN_PID=$!
 
 # ---------- Wait ----------
 wait "$UVICORN_PID"
+
+
+# ---------- Wait for DB ----------
+echo "Checking database connection..."
+
+until alembic current >/dev/null 2>&1; do
+  echo "Database not ready yet..."
+  sleep 2
+done
+
+echo "Database is reachable."
+
+# ---------- Check for alembic_version table ----------
+HAS_VERSION_TABLE=$(psql "$DATABASE_URL" -tAc "
+  SELECT EXISTS (
+    SELECT FROM information_schema.tables
+    WHERE table_name = 'alembic_version'
+  );
+")
+
+if [ "$HAS_VERSION_TABLE" = "t" ]; then
+  echo "Migration history table exists."
+  echo "Upgrading to latest migration (if needed)..."
+  alembic upgrade head
+else
+  echo "No migration history found."
+  echo "Running full migration..."
+  alembic upgrade head
+fi
