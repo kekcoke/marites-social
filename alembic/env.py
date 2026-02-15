@@ -12,7 +12,8 @@ from app.db import Base
 from app.config import get_config
 
 # Import models
-import app.models 
+import app.models
+
 
 # Assign config 
 c = get_config()
@@ -34,8 +35,8 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = Base.metadata
 # print("Tables:", Base.metadata.tables.keys())
+target_metadata = Base.metadata
 
 
 # other values from the config, defined by the needs of env.py,
@@ -43,6 +44,15 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+# Filter to prevent Alembic touching spatial_ref_sys for POSTGIS
+def include_object(object, name, type_, reflected, compare_to):
+    # Ignore the PostGIS spatial_ref_sys table
+    if type_ == "table" and name == "spatial_ref_sys":
+        return False
+    # Ignore PostGIS internal functions/indexes if they appear
+    if name.startswith("spatial_ref_sys"):
+        return False
+    return True
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -61,7 +71,10 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        include_object=include_object,
+        compare_type=True,
         dialect_opts={"paramstyle": "named"},
+        version_table_schema=target_metadata.schema
     )
 
     with context.begin_transaction():

@@ -17,7 +17,7 @@ class Geolocation(Base):
     __tablename__ = "geolocations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    continent = Column(String(2), nullable=False, unique=True, index=True)  # ISO code, automatically create index
+    continent = Column(String(2), nullable=False, index=True)  # ISO code
     continent_name = Column(String(100), nullable=False)
     
     # Denormalized counts - update via materialized view or scheduled job
