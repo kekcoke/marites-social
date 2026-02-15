@@ -17,12 +17,12 @@ class Geolocation(Base):
     __tablename__ = "geolocations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    continent = Column(String(2), nullable=False, unique=True, index=True)  # ISO code
+    continent = Column(String(2), nullable=False, unique=True, index=True)  # ISO code, automatically create index
     continent_name = Column(String(100), nullable=False)
     
     # Denormalized counts - update via materialized view or scheduled job
-    places_count = Column(Integer, default=0, nullable=False)
-    country_count = Column(Integer, default=0, nullable=False)
+    places_count = Column(Integer, server_default='0', default=0, nullable=False)
+    country_count = Column(Integer, server_default='0', default=0, nullable=False)
     
     created_at = Column(
         DateTime(timezone=True),

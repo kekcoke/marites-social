@@ -80,8 +80,8 @@ class Place(Base):
     events = relationship("Event", back_populates="place", passive_deletes=True)
     geolocation_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("geolocations.id", ondelete="SET NULL"),
-        nullable=True
+        ForeignKey("geolocations.id", ondelete="CASCADE"),
+        nullable=False
     )
     geolocation = relationship("Geolocation", back_populates="places")
     
