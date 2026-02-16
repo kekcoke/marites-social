@@ -198,7 +198,7 @@ def upgrade() -> None:
         
         sa.Column('tax_number', sa.String(length=50), nullable=True),
         sa.Column('tax_country', sa.String(length=3), nullable=True),
-        sa.Column('billing_address_id', postgresql.UUID(as_uuid=True), nullable=True),
+        # sa.Column('billing_address_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('subscription_expires_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('is_active', sa.Boolean(), server_default='true', nullable=False),
         sa.Column('is_verified', sa.Boolean(), server_default='false', nullable=False),
@@ -209,7 +209,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['account_type_id'], ['account_types.id'], ondelete='RESTRICT'),
         sa.ForeignKeyConstraint(['subscription_tier_id'], ['subscription_tiers.id'], ondelete='RESTRICT'),
-        sa.ForeignKeyConstraint(['billing_address_id'], ['addresses.id'], ondelete='SET NULL'),
+        # sa.ForeignKeyConstraint(['billing_address_id'], ['addresses.id'], ondelete='SET NULL'),
     )
 
     # ========== CREATE ACCOUNT MEMBERS TABLE ==========
