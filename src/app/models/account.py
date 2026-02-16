@@ -6,69 +6,13 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     func,
-    Index,
-    Enum as SQLEnum
+    Index
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
+from app.core.enums import AccountType, AccountRole, SubscriptionTier
 from app.db.connection import Base
 import uuid
-import enum
-
-
-class AccountRole(enum.Enum):
-    """Roles for account members"""
-    OWNER = "owner"
-    ADMIN = "admin"
-    MANAGER = "manager"
-    MEMBER = "member"
-    VIEWER = "viewer"
-
-    @classmethod
-    def _missing_(cls, value):
-        """Case-insensitive lookup"""
-        if isinstance(value, str):
-            value = value.upper()
-            for member in cls:
-                if member.name == value:
-                    return member
-        return None
-
-
-class AccountType(enum.Enum):
-    """Account type classifications"""
-    CONSUMER = "consumer"
-    COMMUNITY = "community"
-    NGO = "ngo"
-    ENTERPRISE = "enterprise"
-    GOVERNMENT = "government"
-
-    @classmethod
-    def _missing_(cls, value):
-        """Case-insensitive lookup"""
-        if isinstance(value, str):
-            value = value.upper()
-            for member in cls:
-                if member.name == value:
-                    return member
-        return None
-
-
-class SubscriptionTier(enum.Enum):
-    FREE = "free"
-    PRO = "pro"
-    BUSINESS = "business"
-
-    @classmethod
-    def _missing_(cls, value):
-        """Case-insensitive lookup"""
-        if isinstance(value, str):
-            value = value.upper()
-            for member in cls:
-                if member.name == value:
-                    return member
-        return None
-
 
 class AccountType(Base):
     """Reference table for account types"""

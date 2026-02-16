@@ -68,6 +68,28 @@ class NotificationType(CaseInsensitiveValueEnum):
     MENTION = "MENTION"
 
 
+class OrderStatus(CaseInsensitiveValueEnum):
+    """Order status types"""
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+    REFUNDED = "refunded"
+    FAILED = "failed"
+
+
+class PaymentMethod(CaseInsensitiveValueEnum):
+    """Payment method types"""
+    CREDIT_CARD = "credit_card"
+    DEBIT_CARD = "debit_card"
+    PAYPAL = "paypal"
+    STRIPE = "stripe"
+    APPLE_PAY = "apple_pay"
+    GOOGLE_PAY = "google_pay"
+    BANK_TRANSFER = "bank_transfer"
+    CRYPTO = "crypto"
+
+
 class SubscriptionTier(CaseInsensitiveValueEnum):
     FREE = "free"
     PRO = "pro"

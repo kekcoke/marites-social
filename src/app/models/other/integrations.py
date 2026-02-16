@@ -5,42 +5,15 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
+    Text,
     func,
-    Index,
-    Enum as SQLEnum,
-    Text
+    Index
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
+from app.core.enums import IntegrationProvider, IntegrationType
 from app.db.connection import Base
 import uuid
-import enum
-
-
-class IntegrationType(enum.Enum):
-    """Types of integrations available"""
-    PAYMENT = "payment"
-    EMAIL = "email"
-    SMS = "sms"
-    CALENDAR = "calendar"
-    VIDEO = "video"
-    ANALYTICS = "analytics"
-    SOCIAL = "social"
-    CRM = "crm"
-    TICKETING = "ticketing"
-    STREAMING = "streaming"
-    STORAGE = "storage"
-    MARKETING = "marketing"
-
-    @classmethod
-    def _missing_(cls, value):
-        """Case-insensitive lookup"""
-        if isinstance(value, str):
-            value = value.upper()
-            for member in cls:
-                if member.name == value:
-                    return member
-        return None
 
 
 class IntegrationTypeModel(Base):
@@ -60,10 +33,14 @@ class IntegrationTypeModel(Base):
     # Relationships
     integrations = relationship("Integration", back_populates="type_rel")
 
+    __table_args__ = (
+        Index('ix_integration_types_code', 'code', unique=True),
+    )
+
     @property
-    def enum_value(self) -> IntegrationType:
+    def enum(self) -> IntegrationType:
         """Get enum value from code"""
-        return IntegrationType[self.code]
+        return IntegrationType[self.code] if self.code else None
 
 
 class IntegrationProviderModel(Base):
@@ -83,6 +60,15 @@ class IntegrationProviderModel(Base):
 
     # Relationships
     integrations = relationship("Integration", back_populates="provider_rel")
+
+    __table_args__ = (
+        Index('ix_integration_providers_code', 'code', unique=True),
+    )
+
+    @property
+    def enum(self) -> IntegrationProvider:
+        """Get enum value from code"""
+        return IntegrationProvider[self.code] if self.code else None
 
 
 class Integration(Base):
@@ -120,7 +106,7 @@ class Integration(Base):
     # Configuration (should be encrypted in production)
     config = Column(JSONB, nullable=True)
     
-    # OAuth tokens. TODO: Encrypt in addition to config above
+    # OAuth tokens
     access_token = Column(Text, nullable=True)
     refresh_token = Column(Text, nullable=True)
     token_expires_at = Column(DateTime(timezone=True), nullable=True)
@@ -130,49 +116,35 @@ class Integration(Base):
     webhook_secret = Column(String(255), nullable=True)
     
     # Status
-    is_active = Column(Boolean, nullable=False, server_default='true', default=True)
-    is_configured = Column(Boolean, nullable=False, server_default='false', default=False)
+    is_active = Column(Boolean, nullable=False, server_default='true')
+    is_configured = Column(Boolean, nullable=False, server_default='false')
     last_sync_at = Column(DateTime(timezone=True), nullable=True)
     
     # Error tracking
     last_error = Column(Text, nullable=True)
     last_error_at = Column(DateTime(timezone=True), nullable=True)
-    error_count = Column(Integer, nullable=False, server_default='0', default=0)
+    error_count = Column(Integer, nullable=False, server_default='0')
     
-    created_at = Column(
-        DateTime(timezone=True), 
-        server_default=func.now(), 
-        nullable=False
-    )
-
-    updated_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
     # Relationships
     account = relationship("Account", back_populates="integrations")
     type_rel = relationship("IntegrationTypeModel", back_populates="integrations")
     provider_rel = relationship("IntegrationProviderModel", back_populates="integrations")
     
-    # ✅ ALL INDEXES FROM MIGRATION INCLUDED
     __table_args__ = (
-        # Single-column indexes
         Index('ix_integrations_account_id', 'account_id'),
-        Index('ix_integrations_type_id', 'integration_type_id'),
-        Index('ix_integrations_provider_id', 'integration_provider_id'),
-        
-        # Composite indexes for common query patterns
+        Index('ix_integrations_integration_type_id', 'integration_type_id'),
+        Index('ix_integrations_integration_provider_id', 'integration_provider_id'),
         Index('ix_integrations_account_type', 'account_id', 'integration_type_id'),
         Index('ix_integrations_provider_active', 'integration_provider_id', 'is_active'),
     )
 
     @property
     def type(self) -> IntegrationType:
-        """Get enum value from type relation"""
-        return self.type_rel.enum_value if self.type_rel else None
+        """Get integration type enum from relation"""
+        return self.type_rel.enum if self.type_rel else None
 
     @type.setter
     def type(self, value: IntegrationType):
@@ -183,10 +155,14 @@ class Integration(Base):
                 self.integration_type_id = type_model.id
 
     @property
-    def provider(self) -> str:
-        """Get provider name from provider relation"""
-        return self.provider_rel.name if self.provider_rel else None
+    def provider(self) -> IntegrationProvider:
+        """Get integration provider enum from relation"""
+        return self.provider_rel.enum if self.provider_rel else None
 
-    def __repr__(self):
-        type_val = self.type.value if self.type else "unknown"
-        return f"<Integration(id={self.id}, name='{self.name}', type='{type_val}')>"
+    @provider.setter
+    def provider(self, value: IntegrationProvider):
+        """Set integration_provider_id from enum value"""
+        if isinstance(value, IntegrationProvider):
+            provider = IntegrationProviderModel.query.filter_by(code=value.name).first()
+            if provider:
+                self.integration_provider_id = provider.id

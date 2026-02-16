@@ -11,51 +11,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from app.core.enums import PaymentMethod, OrderStatus
 from app.db.connection import Base
 import uuid
-import enum
-
-
-class PaymentMethod(enum.Enum):
-    """Payment method types"""
-    CREDIT_CARD = "credit_card"
-    DEBIT_CARD = "debit_card"
-    PAYPAL = "paypal"
-    STRIPE = "stripe"
-    APPLE_PAY = "apple_pay"
-    GOOGLE_PAY = "google_pay"
-    BANK_TRANSFER = "bank_transfer"
-    CRYPTO = "crypto"
-
-    @classmethod
-    def _missing_(cls, value):
-        """Case-insensitive lookup"""
-        if isinstance(value, str):
-            value = value.upper()
-            for member in cls:
-                if member.name == value:
-                    return member
-        return None
-
-
-class OrderStatus(enum.Enum):
-    """Order status types"""
-    PENDING = "pending"
-    CONFIRMED = "confirmed"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-    REFUNDED = "refunded"
-    FAILED = "failed"
-
-    @classmethod
-    def _missing_(cls, value):
-        """Case-insensitive lookup"""
-        if isinstance(value, str):
-            value = value.upper()
-            for member in cls:
-                if member.name == value:
-                    return member
-        return None
 
 
 class PaymentMethodModel(Base):
