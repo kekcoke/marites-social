@@ -228,7 +228,7 @@ class Account(Base):
     tax_country = Column(String(3), nullable=True)  # ISO 3166-1 alpha-3
     
     # Billing information reference (store in separate secure table)
-    billing_address_id = Column(UUID(as_uuid=True), nullable=True)
+    # billing_address_id = Column(UUID(as_uuid=True), nullable=True)
     
     # Subscription/tier information (foreign key to reference table)
     subscription_tier_id = Column(
