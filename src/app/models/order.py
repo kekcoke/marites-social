@@ -3,8 +3,8 @@ from sqlalchemy import (
     ForeignKey,
     String,
     Integer,
-    Float,
     DateTime,
+    Boolean,
     func,
     Index,
     Enum as SQLEnum
@@ -18,7 +18,6 @@ import enum
 
 class PaymentMethod(enum.Enum):
     """Payment method types"""
-
     CREDIT_CARD = "credit_card"
     DEBIT_CARD = "debit_card"
     PAYPAL = "paypal"
@@ -28,16 +27,80 @@ class PaymentMethod(enum.Enum):
     BANK_TRANSFER = "bank_transfer"
     CRYPTO = "crypto"
 
+    @classmethod
+    def _missing_(cls, value):
+        """Case-insensitive lookup"""
+        if isinstance(value, str):
+            value = value.upper()
+            for member in cls:
+                if member.name == value:
+                    return member
+        return None
+
 
 class OrderStatus(enum.Enum):
     """Order status types"""
-
     PENDING = "pending"
     CONFIRMED = "confirmed"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
     FAILED = "failed"
+
+    @classmethod
+    def _missing_(cls, value):
+        """Case-insensitive lookup"""
+        if isinstance(value, str):
+            value = value.upper()
+            for member in cls:
+                if member.name == value:
+                    return member
+        return None
+
+
+class PaymentMethodModel(Base):
+    """Reference table for payment methods"""
+    __tablename__ = "payment_methods"
+
+    id = Column(Integer, primary_key=True)
+    code = Column(String(50), unique=True, nullable=False)
+    name = Column(String(100), nullable=False)
+    description = Column(String(255))
+    is_active = Column(Boolean, server_default='true', nullable=False)
+    sort_order = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relationships
+    orders = relationship("Order", back_populates="payment_method_rel")
+
+    @property
+    def enum_value(self) -> PaymentMethod:
+        """Get enum value from code"""
+        return PaymentMethod[self.code]
+
+
+class OrderStatusModel(Base):
+    """Reference table for order statuses"""
+    __tablename__ = "order_statuses"
+
+    id = Column(Integer, primary_key=True)
+    code = Column(String(50), unique=True, nullable=False)
+    name = Column(String(100), nullable=False)
+    description = Column(String(255))
+    is_final = Column(Boolean, server_default='false', nullable=False)
+    color = Column(String(20))
+    sort_order = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relationships
+    orders = relationship("Order", back_populates="status_rel")
+
+    @property
+    def enum_value(self) -> OrderStatus:
+        """Get enum value from code"""
+        return OrderStatus[self.code]
 
 
 class Order(Base):
@@ -62,29 +125,36 @@ class Order(Base):
         index=True
     )
     
+    # Reference table foreign keys
+    payment_method_id = Column(
+        Integer,
+        ForeignKey("payment_methods.id", ondelete="RESTRICT"),
+        nullable=False
+    )
+    
+    status_id = Column(
+        Integer,
+        ForeignKey("order_statuses.id", ondelete="RESTRICT"),
+        nullable=False,
+        server_default='1'  # Default to PENDING (id=1)
+    )
+    
     # Pricing - store in cents to avoid floating point issues
     ticket_price = Column(Integer, nullable=False)  # In cents
     total_tax = Column(Integer, nullable=False)  # In cents
     total_price = Column(Integer, nullable=False)  # In cents
-    currency = Column(String(3), default="USD", nullable=False)  # ISO 4217
+    currency = Column(String(3), nullable=False, server_default="USD")  # ISO 4217
     
     # Payment information
-    payment_method = Column(SQLEnum(PaymentMethod), nullable=False)
     payment_processor_id = Column(String(255), nullable=True)  # Stripe charge ID, etc.
-    session_id = Column(String(255), nullable=True, index=True)  # Checkout session
-    
-    # Order status
-    status = Column(
-        SQLEnum(OrderStatus), 
-        default=OrderStatus.PENDING, 
-        nullable=False, 
-        index=True)
+    session_id = Column(String(255), nullable=True)
     
     # Timestamps - crucial for time-series analysis
-    time_utc = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    time_utc = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
     refunded_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -93,19 +163,55 @@ class Order(Base):
     )
     
     # Ticket details
-    ticket_quantity = Column(Integer, default=1, nullable=False)
+    ticket_quantity = Column(Integer, nullable=False, server_default='1')
     ticket_type = Column(String(100), nullable=True)  # VIP, General, Early Bird, etc.
     
     # Relationships
     user = relationship("User")
     event = relationship("Event", back_populates="orders")
+    payment_method_rel = relationship("PaymentMethodModel", back_populates="orders")
+    status_rel = relationship("OrderStatusModel", back_populates="orders")
     
-    # Indexes: Define only what isn't naturally indexed by Unique/Primary constraints
+    # ✅ ALL INDEXES FROM MIGRATION INCLUDED
     __table_args__ = (
+        # Single-column indexes
+        Index('ix_orders_user_id', 'user_id'),
+        Index('ix_orders_event_id', 'event_id'),
+        Index('ix_orders_payment_method_id', 'payment_method_id'),
+        Index('ix_orders_status_id', 'status_id'),
+        
+        # Composite indexes for common query patterns
         Index('ix_orders_user_time', 'user_id', 'time_utc'),
         Index('ix_orders_event_time', 'event_id', 'time_utc'),
-        Index('ix_orders_status_time', 'status', 'time_utc'),
+        Index('ix_orders_status_time', 'status_id', 'time_utc'),
     )
 
+    @property
+    def payment_method(self) -> PaymentMethod:
+        """Get enum value from payment method relation"""
+        return self.payment_method_rel.enum_value if self.payment_method_rel else None
+
+    @payment_method.setter
+    def payment_method(self, value: PaymentMethod):
+        """Set payment_method_id from enum value"""
+        if isinstance(value, PaymentMethod):
+            method = PaymentMethodModel.query.filter_by(code=value.name).first()
+            if method:
+                self.payment_method_id = method.id
+
+    @property
+    def status(self) -> OrderStatus:
+        """Get enum value from status relation"""
+        return self.status_rel.enum_value if self.status_rel else None
+
+    @status.setter
+    def status(self, value: OrderStatus):
+        """Set status_id from enum value"""
+        if isinstance(value, OrderStatus):
+            status = OrderStatusModel.query.filter_by(code=value.name).first()
+            if status:
+                self.status_id = status.id
+
     def __repr__(self):
-        return f"<Order(id={self.id}, confirmation='{self.confirmation_id}', status='{self.status.value}')>"
+        status_val = self.status.value if self.status else "unknown"
+        return f"<Order(id={self.id}, confirmation='{self.confirmation_id}', status='{status_val}')>"
