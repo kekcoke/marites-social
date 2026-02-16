@@ -45,7 +45,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    confirmation_id = Column(String(50), unique=True, nullable=False, index=True)
+    confirmation_id = Column(String(50), unique=True, nullable=False)
     
     # Foreign keys
     user_id = Column(
@@ -74,14 +74,17 @@ class Order(Base):
     session_id = Column(String(255), nullable=True, index=True)  # Checkout session
     
     # Order status
-    status = Column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False, index=True)
+    status = Column(
+        SQLEnum(OrderStatus), 
+        default=OrderStatus.PENDING, 
+        nullable=False, 
+        index=True)
     
     # Timestamps - crucial for time-series analysis
     time_utc = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
     refunded_at = Column(DateTime(timezone=True), nullable=True)
-    
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -97,42 +100,12 @@ class Order(Base):
     user = relationship("User")
     event = relationship("Event", back_populates="orders")
     
-    # Composite indexes for analytics queries
+    # Indexes: Define only what isn't naturally indexed by Unique/Primary constraints
     __table_args__ = (
-        Index('idx_order_time_status', 'time_utc', 'status'),
-        Index('idx_order_event_time', 'event_id', 'time_utc'),
-        Index('idx_order_user_time', 'user_id', 'time_utc'),
-        Index('idx_order_confirmation', 'confirmation_id'),
+        Index('ix_orders_user_time', 'user_id', 'time_utc'),
+        Index('ix_orders_event_time', 'event_id', 'time_utc'),
+        Index('ix_orders_status_time', 'status', 'time_utc'),
     )
 
     def __repr__(self):
         return f"<Order(id={self.id}, confirmation='{self.confirmation_id}', status='{self.status.value}')>"
-
-
-# TIME-SERIES DATABASE CONSIDERATION:
-# Orders are excellent candidates for time-series optimization:
-#
-# 1. POSTGRESQL PARTITIONING:
-#    - Partition by month: orders_2024_01, orders_2024_02, etc.
-#    - Automatic routing of queries to relevant partitions
-#    - Faster aggregations and analytics
-#
-# 2. ANALYTICS/OLAP (ClickHouse, BigQuery):
-#    - Copy order data to OLAP database for analytics
-#    - Real-time dashboards: revenue, sales trends, popular events
-#    - Complex aggregations without impacting transactional DB
-#    - Columnar storage for fast analytical queries
-#
-# 3. DATA RETENTION:
-#    - Keep hot data (last 6 months) in main PostgreSQL
-#    - Warm data (6 months - 2 years) in compressed partitions
-#    - Cold data (>2 years) in S3/data warehouse for compliance
-#
-# 4. STREAMING PIPELINE:
-#    - Kafka/Kinesis for real-time order events
-#    - Stream to analytics DB, data warehouse, and monitoring
-#    - Enable real-time revenue tracking and fraud detection
-#
-# Example partition setup:
-# CREATE TABLE orders_2024_01 PARTITION OF orders
-#   FOR VALUES FROM ('2024-01-01') TO ('2024-02-01');
