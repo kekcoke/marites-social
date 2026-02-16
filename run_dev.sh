@@ -41,19 +41,6 @@ cleanup() {
 
 trap cleanup INT TERM EXIT
 
-# ---------- Start server ----------
-uvicorn app.main:app \
-  --env-file .env \
-  --reload \
-  --host "$HOST" \
-  --port "$PORT" &
-
-UVICORN_PID=$!
-
-# ---------- Wait ----------
-wait "$UVICORN_PID"
-
-
 # ---------- Wait for DB ----------
 echo "Checking database connection..."
 
@@ -65,12 +52,14 @@ done
 echo "Database is reachable."
 
 # ---------- Check for alembic_version table ----------
+echo "Checking alembic version
 HAS_VERSION_TABLE=$(psql "$DATABASE_URL" -tAc "
   SELECT EXISTS (
     SELECT FROM information_schema.tables
     WHERE table_name = 'alembic_version'
   );
 ")
+echo "alembic version: $HAS_VERSION_TABLE"
 
 if [ "$HAS_VERSION_TABLE" = "t" ]; then
   echo "Migration history table exists."
@@ -81,3 +70,16 @@ else
   echo "Running full migration..."
   alembic upgrade head
 fi
+
+# ---------- Start server ----------
+echo "Starting server..."
+uvicorn app.main:app \
+  --env-file .env \
+  --reload \
+  --host "$HOST" \
+  --port "$PORT" &
+
+UVICORN_PID=$!
+
+# ---------- Wait ----------
+wait "$UVICORN_PID"
