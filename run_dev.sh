@@ -52,7 +52,7 @@ done
 echo "Database is reachable."
 
 # ---------- Check for alembic_version table ----------
-echo "Checking alembic version
+echo "Checking alembic version"
 HAS_VERSION_TABLE=$(psql "$DATABASE_URL" -tAc "
   SELECT EXISTS (
     SELECT FROM information_schema.tables
