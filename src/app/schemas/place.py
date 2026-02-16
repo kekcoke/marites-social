@@ -47,7 +47,7 @@ class PlaceUpdate(BaseModel):
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
     geo_continent: Optional[str] = Field(None, max_length=50)
-    country: Optional[str] = Field(None, min_length=2, max_length=100)
+    country_abbreviation: Optional[str] = Field(None, min_length=2, max_length=2)
     timezone: Optional[str] = Field(None, min_length=1, max_length=50)
     icon_desktop_url: Optional[str] = Field(None, max_length=500)
     icon_mobile_url: Optional[str] = Field(None, max_length=500)

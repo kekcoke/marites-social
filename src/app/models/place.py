@@ -85,15 +85,19 @@ class Place(Base):
     )
     geolocation = relationship("Geolocation", back_populates="places")
     
-    # Indexes for common queries
-    __table_args__ = (
-        Index('idx_place_coordinates', 'latitude', 'longitude'),
-        Index('idx_place_country_continent', 'country', 'geo_continent'),
-        Index('idx_place_launched', 'is_launched'),
-    )
+    # Standard indexes
+    Index('ix_places_name', 'name'),
+    Index('ix_places_slug', 'slug', unique=True),
+    Index('ix_places_country_abbreviation', 'country_abbreviation'),
+    Index('ix_places_geo_continent', 'geo_continent'),
+    Index('ix_places_is_launched', 'is_launched'),
+
+    # Composite indexes
+    Index('idx_place_coordinates', 'latitude', 'longitude'),
+    Index('idx_place_country_abbreviation_continent', 'country_abbreviation', 'geo_continent'),
 
     def __repr__(self):
-        return f"<Place(id={self.id}, name='{self.name}', country='{self.country}')>"
+        return f"<Place(id={self.id}, name='{self.name}', country_abbreviation='{self.country_abbreviation}')>"
 
 
 # SCALING CONSIDERATION: For distance calculations, consider:
