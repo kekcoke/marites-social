@@ -46,12 +46,18 @@ target_metadata = Base.metadata
 
 # Filter to prevent Alembic touching spatial_ref_sys for POSTGIS
 def include_object(object, name, type_, reflected, compare_to):
+    # Check if name is None to avoid AttributeError
+    if name is None:
+        return True
+        
     # Ignore the PostGIS spatial_ref_sys table
     if type_ == "table" and name == "spatial_ref_sys":
         return False
-    # Ignore PostGIS internal functions/indexes if they appear
+        
+    # Ignore PostGIS internal functions/indexes
     if name.startswith("spatial_ref_sys"):
         return False
+        
     return True
 
 def run_migrations_offline() -> None:
