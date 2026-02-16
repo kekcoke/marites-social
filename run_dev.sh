@@ -63,7 +63,7 @@ echo "alembic version: $HAS_VERSION_TABLE"
 
 if [ "$HAS_VERSION_TABLE" = "t" ]; then
   echo "Migration history table exists."
-  echo "Upgrading to latest migration (if needed)..."
+  echo "Upgrading to latest migration if needed..."
   alembic upgrade head
 else
   echo "No migration history found."
