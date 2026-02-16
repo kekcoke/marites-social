@@ -7,7 +7,7 @@ from sqlalchemy import (
     Index,
     Enum as SQLEnum
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.db.connection import Base
 import uuid
@@ -104,16 +104,18 @@ class Account(Base):
     subscription_tier = Column(
         SQLEnum(SubscriptionTier),
         nullable=False,
-        default=SubscriptionTier.FREE
-    ) 
+        default=SubscriptionTier.FREE,
+        server_default="FREE"
+    )
+
     subscription_expires_at = Column(
         DateTime(timezone=True), 
         nullable=True
     )  # Create serverless job that converts to FREE after trial-period
     
     # Status
-    is_active = Column(String(20), default="active", nullable=False)
-    is_verified = Column(String(20), default="false", nullable=False)
+    is_active = Column(String(20), server_default="active", default="active", nullable=False)
+    is_verified = Column(String(20), server_default="false", default="false", nullable=False)
     
     created_at = Column(
         DateTime(timezone=True),
