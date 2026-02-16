@@ -61,6 +61,12 @@ class ChatRoom(Base):
         onupdate=func.now(),
         nullable=False
     )
+    archived_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False
+    )
     
     # gRPC service reference - the actual chat service endpoint
     grpc_service_url = Column(String(500), nullable=True)
