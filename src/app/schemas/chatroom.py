@@ -38,6 +38,7 @@ class ChatRoomResponse(ChatRoomBase):
     grpc_service_url: Optional[str] = None
     created_on: datetime
     updated_at: datetime
+    archived_on: datetime = None
 
     class Config:
         from_attributes = True

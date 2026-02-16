@@ -65,7 +65,7 @@ class ChatRoom(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
-        nullable=False
+        nullable=True
     )
     
     # gRPC service reference - the actual chat service endpoint
