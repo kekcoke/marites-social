@@ -17,10 +17,7 @@ config = get_config()
 
 from app.db import get_db_session
                            
-# Automatically create the database tables if they do not exist
-models.Base.metadata.create_all(bind=engine)
-
-
+                           
 # Import routers
 from .routers import post, user, sqlalchemy, auth, vote
 

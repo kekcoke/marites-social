@@ -105,7 +105,9 @@ def run_migrations_online() -> None:
             connection=connection, 
             target_metadata=target_metadata,
             include_object=include_object,
-            compare_type=True
+            compare_type=True,
+            # Ensure consistency with run_migrations_offline
+            version_table_schema=target_metadata.schema
         )
 
         with context.begin_transaction():

@@ -6,6 +6,12 @@ set -e
 # ---------- Config ----------
 START_PORT=8000
 HOST=127.0.0.1
+MIGRATE_ONLY=false
+
+# Check for flags
+if [[ "$1" == "--migrate-only" ]]; then
+  MIGRATE_ONLY=true
+fi
 
 # Activate the virtual environment
 source marites-venv/bin/activate
@@ -51,24 +57,13 @@ done
 
 echo "Database is reachable."
 
-# ---------- Check for alembic_version table ----------
-echo "Checking alembic version"
-HAS_VERSION_TABLE=$(psql "$DATABASE_URL" -tAc "
-  SELECT EXISTS (
-    SELECT FROM information_schema.tables
-    WHERE table_name = 'alembic_version'
-  );
-")
-echo "alembic version: $HAS_VERSION_TABLE"
+# ---------- Sync Logic ----------
+echo "Syncing database to 'head'..."
+alembic upgrade head
 
-if [ "$HAS_VERSION_TABLE" = "t" ]; then
-  echo "Migration history table exists."
-  echo "Upgrading to latest migration if needed..."
-  alembic upgrade head
-else
-  echo "No migration history found."
-  echo "Running full migration..."
-  alembic upgrade head
+if [ "$MIGRATE_ONLY" = true ]; then
+  echo "Database is at HEAD. Migration mode complete."
+  exit 0
 fi
 
 # ---------- Start server ----------
