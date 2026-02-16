@@ -20,9 +20,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # 1. Create all ENUM types first
-    account_type_enum = postgresql.ENUM('CONSUMER', 'COMMUNITY', 'NGO', 'ENTERPRISE', 'GOVERNMENT', name='accounttype')
-    sub_tier_enum = postgresql.ENUM('FREE', 'PRO', 'BUSINESS', name='subscriptiontier')
-    account_role_enum = postgresql.ENUM('OWNER', 'ADMIN', 'MANAGER', 'MEMBER', 'VIEWER', name='accountrole')
+    account_type_enum = postgresql.ENUM(
+        'CONSUMER', 'COMMUNITY', 'NGO', 'ENTERPRISE', 'GOVERNMENT', 
+        name='accounttype',
+        create_type=False
+    )
+    sub_tier_enum = postgresql.ENUM(
+        'FREE', 'PRO', 'BUSINESS', 
+        name='subscriptiontier',
+        create_type=False)
+    account_role_enum = postgresql.ENUM(
+        'OWNER', 'ADMIN', 'MANAGER', 'MEMBER', 'VIEWER',
+        name='accountrole',
+        create_type=False)
     
     account_type_enum.create(op.get_bind())
     sub_tier_enum.create(op.get_bind())
