@@ -48,6 +48,14 @@ def upgrade() -> None:
     op.create_index('idx_comment_commentable', 'comments', ['commentable_type', 'commentable_id', 'created_at'])
     op.create_index('idx_comment_user', 'comments', ['user_id', 'created_at'])
 
+    # ========== CREATE TRIGGERS ==========
+    op.execute("""
+        CREATE TRIGGER update_comments_updated_at 
+        BEFORE UPDATE ON comments
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();
+    """)
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER IF EXISTS update_comments_updated_at ON comments")
     op.drop_table('comments')

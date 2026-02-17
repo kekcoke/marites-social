@@ -95,8 +95,16 @@ def upgrade() -> None:
     op.create_index('idx_notification_expire', 'notifications', ['expires_at'])
     op.create_index('idx_notification_entity', 'notifications', ['related_entity_type', 'related_entity_id'])
 
+    # ========== CREATE TRIGGERS ==========
+    op.execute("""
+        CREATE TRIGGER update_notification_types_updated_at 
+        BEFORE UPDATE ON notification_types
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();
+    """)
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER IF EXISTS update_notification_types_updated_at ON notification_types")
     op.drop_table('notifications')
     op.drop_table('notification_types')
     
