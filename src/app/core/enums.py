@@ -8,7 +8,16 @@ class CaseInsensitiveValueEnum(enum.Enum):
         if isinstance(value, str):
             return cls._value2member_map_.get(value.lower())
         return None
-    
+
+
+class AttendeeStatus(CaseInsensitiveValueEnum):
+    """Attendee RSVP status"""
+    INTERESTED = "interested"
+    GOING = "going"
+    NOT_GOING = "not_going"
+    ATTENDED = "attended"
+
+
 class AccountRole(CaseInsensitiveValueEnum):
     """Roles for account members"""
     OWNER = "owner"
