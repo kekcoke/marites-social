@@ -1,7 +1,7 @@
 """geolocation migration
 
 Revision ID: e0d01e1211da
-Revises: e56c093e3b42
+Revises: 615e2934f431
 Create Date: 2026-02-15 13:11:25.925983
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'e0d01e1211da'
-down_revision: Union[str, Sequence[str], None] = 'e56c093e3b42'
+down_revision: Union[str, Sequence[str], None] = '615e2934f431'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -20,6 +20,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # ========== CREATE TRIGGER ==========
+    """Define the shared function once for the entire database
+        TRIGGER to return now()
+    """
+    op.execute("""
+        CREATE OR REPLACE FUNCTION update_updated_at_column()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = now();
+            RETURN NEW;
+        END;
+        $$ language 'plpgsql';
+    """)
+
     # ========== USERS TABLE ==========
     op.create_table(
         'users',
@@ -88,3 +102,4 @@ def downgrade() -> None:
     op.drop_table('votes')
     op.drop_table('posts')
     op.drop_table('users')
+    op.execute("DROP FUNCTION IF EXISTS update_updated_at_column CASCADE;")
