@@ -10,5 +10,5 @@ def test_schema_validation():
     }
     
     # This should not raise an exception
-    post = schemas.CreatePost(**payload)
+    post = schemas.PostCreate(**payload)
     print(f"Schema validated: {post}")

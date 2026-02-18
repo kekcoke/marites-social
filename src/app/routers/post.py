@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 def create_posts(
-    post: schemas.CreatePost, 
+    post: schemas.PostCreate, 
     db: Session = Depends(get_db_session),
     user_id: UUID = Depends(oauth2.get_current_user)
 ):
@@ -205,7 +205,7 @@ def get_post(
 @router.put("/{id}", response_model=schemas.PostResponse)
 def update_post(
     id: int, 
-    post: schemas.UpdatePost, 
+    post: schemas.PostUpdate, 
     db: Session = Depends(get_db_session),
     user_id: UUID = Depends(oauth2.get_current_user)
 ):

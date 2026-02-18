@@ -1,7 +1,7 @@
 # tests/routes/test_posts.py
 from app import schemas
 
-class TestCreatePost:
+class TestPostCreate:
 
     def test_create_post_success(self, authorized_client, post_payload):
         """Test successful post creation"""
@@ -143,7 +143,7 @@ class TestGetSinglePost:
         assert "votes" in post_data
         assert post_data["votes"] >= 1
 
-class TestUpdatePost:
+class TestPostUpdate:
     """Test post update endpoint"""
     
     def test_update_post_success(self, authorized_client, test_post):
