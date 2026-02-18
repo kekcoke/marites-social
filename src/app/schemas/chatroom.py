@@ -1,12 +1,11 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 from uuid import UUID
-from enum import Enum
 
 class ChatRoomBase(BaseModel):
     """Base schema for ChatRoom"""
-
+    model_config = ConfigDict(from_attributes=True)
     account_id: UUID
     event_id: Optional[UUID] = None
     owner_id: Optional[UUID] = None
@@ -21,7 +20,6 @@ class ChatRoomCreate(ChatRoomBase):
 
 class ChatRoomUpdate(BaseModel):
     """Schema for updating a chat room"""
-
     name: Optional[str] = Field(None, max_length=200)
     description: Optional[str] = Field(None, max_length=500)
     num_active_users_in_session: Optional[int] = Field(None, ge=0)
@@ -30,7 +28,6 @@ class ChatRoomUpdate(BaseModel):
 
 class ChatRoomResponse(ChatRoomBase):
     """Schema for chat room responses"""
-
     id: UUID
     num_active_users_in_session: int
     activity_level_score: float
@@ -38,12 +35,9 @@ class ChatRoomResponse(ChatRoomBase):
     grpc_service_url: Optional[str] = None
     created_on: datetime
     updated_at: datetime
-    archived_on: datetime = None
-
-    class Config:
-        from_attributes = True
+    archived_at: Optional[datetime] = None
 
 
 class ChatRoomWithToken(ChatRoomResponse):
     """Chat room with gRPC connection token"""
-    grpc_room_token: str
+    grpc_room_token: Optional[str] = None
