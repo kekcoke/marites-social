@@ -7,9 +7,12 @@ from sqlalchemy import (
     DateTime,
     func
 )
+from sqlalchemy import ForeignKey, Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.connection import Base
 from sqlalchemy.orm import relationship
+from typing import List
 
 class User(Base):
     """SQLAlchemy model for users table"""
@@ -37,7 +40,16 @@ class User(Base):
 
     # 2. Events & Attendance
     created_events = relationship("Event", back_populates="creator")
-    event_attendances = relationship("EventAttendee", back_populates="user", cascade="all, delete-orphan")
+    event_attendances: Mapped[List["EventAttendee"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    # User -> Event (creator relationship)
+    created_events: Mapped[List["Event"]] = relationship(
+        back_populates="creator"
+    )
+
     
     # 3. Communications & Content
     posts = relationship("Post", back_populates="user", passive_deletes=True)

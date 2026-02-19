@@ -9,7 +9,7 @@ from sqlalchemy import (
     Index
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from app.core.enums import AttendeeStatus
 from app.db.connection import Base
 
@@ -71,8 +71,15 @@ class EventAttendee(Base):
     checked_in_at = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
-    event = relationship("Event", back_populates="attendees")
-    user = relationship("User", back_populates="event_attendances")
+    # EventAttendee -> User
+    user: Mapped["User"] = relationship(
+        back_populates="event_attendances"
+    )
+
+    # EventAttendee -> Event
+    event: Mapped["Event"] = relationship(
+        back_populates="attendees"
+    )
     order = relationship("Order")
     status_rel = relationship("AttendeeStatuses", back_populates="event_attendees")
     

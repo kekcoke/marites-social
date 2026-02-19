@@ -204,7 +204,7 @@ class Account(Base):
     )
     
     # Relationships
-    owner = relationship("User", foreign_keys=[user_id], back_populates="accounts")
+    owner = relationship("User", foreign_keys=[user_id], back_populates="owned_accounts")
     account_type_rel = relationship("AccountType", back_populates="accounts")
     subscription_tier_rel = relationship("SubscriptionTier", back_populates="accounts")
     events = relationship("Event", back_populates="account", passive_deletes=True)

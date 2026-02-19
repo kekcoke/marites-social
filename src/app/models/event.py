@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -10,7 +11,7 @@ from sqlalchemy import (
     ARRAY
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from app.db.connection import Base
 import uuid
 
@@ -68,10 +69,20 @@ class Event(Base):
     # Relationships
     place = relationship("Place", back_populates="events")
     account = relationship("Account", back_populates="events")
-    creator = relationship("User", foreign_keys=[creator_user_id])
     chat_rooms = relationship("ChatRoom", back_populates="event", passive_deletes=True)
     orders = relationship("Order", back_populates="event", passive_deletes=True)
-    
+
+    # Event -> EventAttendee
+    attendees: Mapped[List["EventAttendee"]] = relationship(
+        back_populates="event",
+        cascade="all, delete-orphan"
+    )
+
+    # Event -> User (creator)
+    creator: Mapped["User"] = relationship(
+        back_populates="created_events"
+    )
+
     # Composite indexes for common queries
     __table_args__ = (
         Index('idx_event_time_range', 'start_time_utc', 'end_time_utc'),

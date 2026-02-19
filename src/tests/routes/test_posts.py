@@ -1,296 +1,273 @@
 # tests/routes/test_posts.py
 from app import schemas
 
+
 class TestPostCreate:
 
     def test_create_post_success(self, authorized_client, post_payload):
-        """Test successful post creation"""
+        """Test successful post creation."""
         res = authorized_client.post("/posts/", json=post_payload)
-        
+
         assert res.status_code == 201
         post = schemas.PostResponse(**res.json())
         assert post.title == post_payload["title"]
         assert post.content == post_payload["content"]
-        assert hasattr(post, 'id')
-        assert hasattr(post, 'created_at')
-        assert hasattr(post, 'user_id')
-    
+        assert hasattr(post, "id")
+        assert hasattr(post, "created_at")
+        assert hasattr(post, "user_id")
+
     def test_create_post_unauthorized(self, client, post_payload):
-        """Test creating post without authentication"""
+        """Test creating a post without authentication."""
         res = client.post("/posts/", json=post_payload)
-        
+
         assert res.status_code == 401
 
     def test_create_invalid_token(self, client, post_payload):
-        """Test creating post with invalid token"""
-        client.header = { "Authorization": "Bearer invalid_token"}
+        """Test creating a post with an invalid token."""
+        client.headers = {"Authorization": "Bearer invalid_token"}
         res = client.post("/posts/", json=post_payload)
 
         assert res.status_code == 401
 
     def test_create_post_missing_title(self, authorized_client, post_payload):
-        """Test creating post without title"""
+        """Test creating a post without a title."""
         incomplete_payload = post_payload.copy()
         del incomplete_payload["title"]
-        
+
         res = authorized_client.post("/posts/", json=incomplete_payload)
-        
+
         assert res.status_code == 422
 
     def test_create_post_missing_author(self, authorized_client, post_payload):
-        """Test creating post without author"""
+        """Test creating a post without an author."""
         incomplete_payload = post_payload.copy()
         del incomplete_payload["author"]
-        
+
         res = authorized_client.post("/posts/", json=incomplete_payload)
-        
+
         assert res.status_code == 422
-    
+
     def test_create_post_missing_content(self, authorized_client, post_payload):
-        """Test creating post without content"""
+        """Test creating a post without content."""
         incomplete_payload = post_payload.copy()
         del incomplete_payload["content"]
-        
+
         res = authorized_client.post("/posts/", json=incomplete_payload)
-        
+
         assert res.status_code == 422
-    
+
     def test_create_post_empty_title(self, authorized_client, post_payload):
-        """Test creating post with empty title"""
+        """Test creating a post with an empty title."""
         invalid_payload = post_payload.copy()
         invalid_payload["title"] = ""
-        
+
         res = authorized_client.post("/posts/", json=invalid_payload)
-        
-        # Should validate if min_length is set in schema
+
+        # 422 if min_length validation is set; otherwise the router may accept it
         assert res.status_code in [201, 422]
-    
+
     def test_create_post_default_published(self, authorized_client):
-        """Test creating post with default published status"""
+        """Test creating a post includes a published field in the response."""
         payload = {
             "title": "Test Post",
             "content": "Test Content",
-            "author" : "Test Author",
-            "published" : True
+            "author": "Test Author",
+            "published": True,
         }
-        
+
         res = authorized_client.post("/posts/", json=payload)
-        
+
         assert res.status_code == 201
         post = schemas.PostResponse(**res.json())
-        # Default should be True based on common patterns
-        assert hasattr(post, 'published')
+        assert hasattr(post, "published")
+
 
 class TestGetLatestPost:
-    """Test get latest post endpoint"""
-    
+    """Test get latest post endpoint."""
+
     def test_get_latest_post_success(self, authorized_client, test_posts):
-        """Test getting the most recent post"""
+        """Test getting the most recently created post."""
         res = authorized_client.get("/posts/latest")
-        
+
         assert res.status_code == 200
         post = schemas.PostResponse(**res.json())
-        # Should be the last created post
         assert post.id == test_posts[-1].id
-    
+
     def test_get_latest_post_empty_database(self, authorized_client):
-        """Test getting latest post when no posts exist"""
+        """Test getting the latest post when no posts exist."""
         res = authorized_client.get("/posts/latest")
-        
+
         assert res.status_code == 404
         assert "No posts found" in res.json()["detail"]
-    
+
     def test_get_latest_post_unauthorized(self, client, test_posts):
-        """Test getting latest post without authentication"""
+        """Test getting the latest post without authentication."""
         res = client.get("/posts/latest")
-        
+
         assert res.status_code == 401
 
 
 class TestGetSinglePost:
-    """Test get single post endpoint"""
-    
+    """Test get single post endpoint."""
+
     def test_get_post_success(self, authorized_client, test_post):
-        """Test getting a single post by ID"""
+        """Test getting a single post by ID."""
         res = authorized_client.get(f"/posts/{test_post.id}")
-        
+
         assert res.status_code == 200
-        post = res.json() # returns dict!
-        
+        post = res.json()
         assert post["id"] == test_post.id
         assert post["title"] == test_post.title
         assert "votes" in post
-    
+
     def test_get_post_not_found(self, authorized_client):
-        """Test getting non-existent post"""
+        """Test getting a non-existent post."""
         res = authorized_client.get("/posts/99999")
-        
+
         assert res.status_code == 404
         assert "not found" in res.json()["detail"].lower()
-    
+
     def test_get_post_unauthorized(self, client, test_post):
-        """Test getting post without authentication"""
+        """Test getting a post without authentication."""
         res = client.get(f"/posts/{test_post.id}")
-        
+
         assert res.status_code == 401
-    
+
     def test_get_post_with_votes(self, authorized_client, test_post, test_vote):
-        """Test getting post includes vote count"""
+        """Test that getting a post includes its vote count."""
         res = authorized_client.get(f"/posts/{test_post.id}")
-        
+
         assert res.status_code == 200
         post_data = res.json()
         assert "votes" in post_data
         assert post_data["votes"] >= 1
 
+
 class TestPostUpdate:
-    """Test post update endpoint"""
-    
+    """Test post update endpoint."""
+
     def test_update_post_success(self, authorized_client, test_post):
-        """Test successfully updating a post"""
+        """Test successfully updating a post."""
         update_payload = {
             "title": "Updated Title",
             "content": "Updated Content",
-            "published": False
+            "published": False,
         }
-        
+
         res = authorized_client.put(f"/posts/{test_post.id}", json=update_payload)
-        
+
         assert res.status_code == 200
         post = schemas.PostResponse(**res.json())
         assert post.title == update_payload["title"]
         assert post.content == update_payload["content"]
         assert post.published == update_payload["published"]
-    
+
     def test_update_post_partial(self, authorized_client, test_post):
-        """Test partially updating a post"""
-        update_payload = {
-            "title": "New Title Only"
-        }
-        
+        """Test partially updating a post — only title changes, content stays."""
+        original_content = test_post.content
+        update_payload = {"title": "New Title Only"}
+
         res = authorized_client.put(f"/posts/{test_post.id}", json=update_payload)
-        
+
         assert res.status_code == 200
         post = schemas.PostResponse(**res.json())
         assert post.title == update_payload["title"]
-        # Content should remain unchanged
-        assert post.content == test_post.content
-    
+        # Content must be preserved by the router
+        assert post.content == original_content
+
     def test_update_post_not_found(self, authorized_client):
-        """Test updating non-existent post"""
+        """Test updating a non-existent post."""
         update_payload = {"title": "Updated Title"}
         res = authorized_client.put("/posts/99999", json=update_payload)
-        
+
         assert res.status_code == 404
-    
+
     def test_update_post_unauthorized(self, client, test_post):
-        """Test updating post without authentication"""
+        """Test updating a post without authentication."""
         update_payload = {"title": "Updated Title"}
         res = client.put(f"/posts/{test_post.id}", json=update_payload)
-        
+
         assert res.status_code == 401
-    
+
     def test_update_post_wrong_user(self, authorized_client_2, test_post):
-        """Test updating post created by different user"""
-        # test_post belongs to test_user, but we're using authorized_client_2
+        """
+        Test updating a post owned by a different user.
+
+        Ownership enforcement should return 403; if not yet implemented the
+        router will return 200 — both are accepted here so the test documents
+        current behaviour while flagging the security gap.
+        """
         update_payload = {"title": "Hacked Title"}
-        
-        # Note: Current implementation doesn't check ownership on update
-        # This is a security issue that should be fixed
+
         res = authorized_client_2.put(f"/posts/{test_post.id}", json=update_payload)
-        
-        # Should be 403 Forbidden if ownership check is implemented
+
         assert res.status_code in [200, 403]
 
+
 class TestDeletePost:
-    """Test post deletion endpoint"""
-    
+    """Test post deletion endpoint."""
+
     def test_delete_post_success(self, authorized_client, test_post):
-        """Test successfully deleting own post"""
+        """Test successfully deleting the authenticated user's own post."""
         res = authorized_client.delete(f"/posts/{test_post.id}")
-        
+
         assert res.status_code == 204
-        
-        # Verify post is deleted
+
+        # Confirm the post is gone
         get_res = authorized_client.get(f"/posts/{test_post.id}")
         assert get_res.status_code == 404
-    
+
     def test_delete_post_not_found(self, authorized_client):
-        """Test deleting non-existent post"""
+        """Test deleting a non-existent post."""
         res = authorized_client.delete("/posts/99999")
-        
+
         assert res.status_code == 404
-    
+
     def test_delete_post_unauthorized(self, client, test_post):
-        """Test deleting post without authentication"""
+        """Test deleting a post without authentication."""
         res = client.delete(f"/posts/{test_post.id}")
-        
+
         assert res.status_code == 401
-    
+
     def test_delete_post_wrong_user(self, authorized_client_2, test_post):
-        """Test deleting post created by different user"""
-        # test_post belongs to test_user, but we're using authorized_client_2
+        """Test that a user cannot delete another user's post."""
         res = authorized_client_2.delete(f"/posts/{test_post.id}")
-        
+
         assert res.status_code == 403
         assert "Not authorized" in res.json()["detail"]
 
+
 class TestPostIntegration:
-    """Integration tests for post workflows"""
-    
+    """Integration tests for post workflows."""
+
     def test_create_update_delete_workflow(self, authorized_client, post_payload):
-        """Test complete CRUD workflow"""
+        """Test the full CRUD lifecycle for a post."""
         # Create
         create_res = authorized_client.post("/posts/", json=post_payload)
         assert create_res.status_code == 201
         post = schemas.PostResponse(**create_res.json())
-        
+
         # Read
         get_res = authorized_client.get(f"/posts/{post.id}")
         assert get_res.status_code == 200
-        
+
         # Update
         update_payload = {"title": "Updated Title"}
         update_res = authorized_client.put(f"/posts/{post.id}", json=update_payload)
         assert update_res.status_code == 200
-        
+
         # Delete
         delete_res = authorized_client.delete(f"/posts/{post.id}")
         assert delete_res.status_code == 204
-    
-    # def test_multiple_users_posts(self, authorized_client, authorized_client_2, post_payload):
-    #     """Test multiple users creating posts"""
-    #     # User 1 creates post
-    #     res1 = authorized_client.post("/posts/", json=post_payload)
-    #     assert res1.status_code == 201
-    #     post1 = schemas.PostResponse(**res1.json())
-        
-    #     # User 2 creates post
-    #     payload2 = {
-    #         **post_payload,
-    #     }
-    #     res2 = authorized_client_2.post("/posts/", json=post_payload)
-    #     assert res2.status_code == 201
-    #     post2 = schemas.PostResponse(**res2.json())
-        
-    #     # Different posts
-    #     assert post1.id != post2.id
-    #     assert post1.user_id != post2.user_id
-    
-    def test_post_ownership_enforcement(self, authorized_client, authorized_client_2, test_post):
-        """Test that users can only delete their own posts"""
-        # Owner can delete
+
+    def test_post_ownership_enforcement(
+        self, authorized_client, authorized_client_2, test_post
+    ):
+        """Test that only the owning user can delete a post."""
+        # Different user cannot delete test_post
+        other_delete = authorized_client_2.delete(f"/posts/{test_post.id}")
+        assert other_delete.status_code == 403
+
+        # The owner can delete it
         owner_delete = authorized_client.delete(f"/posts/{test_post.id}")
-        
-        # If not already deleted
-        if owner_delete.status_code == 204:
-            # Create another post to test with different user
-            new_post_res = authorized_client.post("/posts/", json={
-                "title": "Owner Post",
-                "content": "Owner Content"
-            })
-            new_post = schemas.PostResponse(**new_post_res.json())
-            
-            # Different user cannot delete
-            other_delete = authorized_client_2.delete(f"/posts/{new_post.id}")
-            assert other_delete.status_code == 403
+        assert owner_delete.status_code == 204

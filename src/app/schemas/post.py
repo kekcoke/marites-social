@@ -28,10 +28,11 @@ class PostBase(BaseModel):
     user_id: UUID
 
 class PostCreate(BaseModel):
-    title: str
-    content: str
-    author: str
-    published: bool = True
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+    author: str = Field(..., min_length=1, max_length=100)
+    published: bool = Field(default=True, description="Published status")
+
 
 class PostUpdate(BaseModel):
     """Schema for updating an existing post - all fields optional"""
