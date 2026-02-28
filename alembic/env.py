@@ -8,10 +8,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
-from src.app import Base, config as c
+from app.db import Base 
+from app.config import get_config
 
 # Import models
-from src.app.models import *
+import app.models
+
+
+# Assign config 
+c = get_config()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -30,13 +35,30 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+# print("Tables:", Base.metadata.tables.keys())
 target_metadata = Base.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+# Filter to prevent Alembic touching spatial_ref_sys for POSTGIS
+def include_object(object, name, type_, reflected, compare_to):
+    # Check if name is None to avoid AttributeError
+    if name is None:
+        return True
+        
+    # Ignore the PostGIS spatial_ref_sys table
+    if type_ == "table" and name == "spatial_ref_sys":
+        return False
+        
+    # Ignore PostGIS internal functions/indexes
+    if name.startswith("spatial_ref_sys"):
+        return False
+        
+    return True
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -55,7 +77,10 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        include_object=include_object,
+        compare_type=True,
         dialect_opts={"paramstyle": "named"},
+        version_table_schema=target_metadata.schema
     )
 
     with context.begin_transaction():
@@ -77,7 +102,12 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata,
+            include_object=include_object,
+            compare_type=True,
+            # Ensure consistency with run_migrations_offline
+            version_table_schema=target_metadata.schema
         )
 
         with context.begin_transaction():

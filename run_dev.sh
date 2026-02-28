@@ -6,6 +6,12 @@ set -e
 # ---------- Config ----------
 START_PORT=8000
 HOST=127.0.0.1
+MIGRATE_ONLY=false
+
+# Check for flags
+if [[ "$1" == "--migrate-only" ]]; then
+  MIGRATE_ONLY=true
+fi
 
 # Activate the virtual environment
 source marites-venv/bin/activate
@@ -41,7 +47,27 @@ cleanup() {
 
 trap cleanup INT TERM EXIT
 
+# ---------- Wait for DB ----------
+echo "Checking database connection..."
+
+until alembic current >/dev/null 2>&1; do
+  echo "Database not ready yet..."
+  sleep 2
+done
+
+echo "Database is reachable."
+
+# ---------- Sync Logic ----------
+echo "Syncing database to 'head'..."
+alembic upgrade head
+
+if [ "$MIGRATE_ONLY" = true ]; then
+  echo "Database is at HEAD. Migration mode complete."
+  exit 0
+fi
+
 # ---------- Start server ----------
+echo "Starting server..."
 uvicorn app.main:app \
   --env-file .env \
   --reload \
