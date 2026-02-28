@@ -209,12 +209,13 @@ class TestDeletePost:
 
     def test_delete_post_success(self, authorized_client, test_post):
         """Test successfully deleting the authenticated user's own post."""
-        res = authorized_client.delete(f"/posts/{test_post.id}")
+        post_id = test_post.id
+        res = authorized_client.delete(f"/posts/{post_id}")
 
         assert res.status_code == 204
 
         # Confirm the post is gone
-        get_res = authorized_client.get(f"/posts/{test_post.id}")
+        get_res = authorized_client.get(f"/posts/{post_id}")
         assert get_res.status_code == 404
 
     def test_delete_post_not_found(self, authorized_client):

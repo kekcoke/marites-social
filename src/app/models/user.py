@@ -39,7 +39,6 @@ class User(Base):
     account_memberships = relationship("AccountMember", back_populates="user", foreign_keys="AccountMember.user_id")
 
     # 2. Events & Attendance
-    created_events = relationship("Event", back_populates="creator")
     event_attendances: Mapped[List["EventAttendee"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan"

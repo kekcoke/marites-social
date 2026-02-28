@@ -127,10 +127,11 @@ class Order(Base):
     # Relationships
     user = relationship("User")
     event = relationship("Event", back_populates="orders")
+    attendees = relationship("EventAttendee", back_populates="order")  # One order can have multiple attendees
     payment_method_rel = relationship("PaymentMethodModel", back_populates="orders")
     status_rel = relationship("OrderStatusModel", back_populates="orders")
     
-    # ✅ ALL INDEXES FROM MIGRATION INCLUDED
+    # ALL INDEXES FROM MIGRATION INCLUDED
     __table_args__ = (
         # Single-column indexes
         Index('ix_orders_user_id', 'user_id'),

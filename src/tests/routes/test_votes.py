@@ -156,11 +156,12 @@ class TestVoteIntegration:
 
     def test_user_cannot_vote_on_deleted_post(self, authorized_client, test_post):
         """Test that voting fails once the target post has been deleted."""
-        delete_res = authorized_client.delete(f"/posts/{test_post.id}")
+        post_id = test_post.id
+        delete_res = authorized_client.delete(f"/posts/{post_id}")
         assert delete_res.status_code == 204
 
         vote_res = authorized_client.post(
-            "/vote/", json={"post_id": test_post.id, "dir": 1}
+            "/vote/", json={"post_id": post_id, "dir": 1}
         )
         assert vote_res.status_code == 404
 

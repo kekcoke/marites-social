@@ -2,7 +2,7 @@ from app.db.connection import Base
 from app.models.post import Post
 from app.models.user import User
 from app.models.vote import Vote
-from app.models.account import Account
+from app.models.account import Account, AccountMember
 from app.models.attendee import EventAttendee
 from app.models.chatroom import ChatRoom
 from app.models.event import Event
@@ -19,6 +19,7 @@ __all__ = [
     "User", 
     "Vote",
     "Account",
+    "AccountMember",
     "EventAttendee",
     "ChatRoom",
     "Event",

@@ -75,7 +75,7 @@ class ChatRoom(Base):
     # Relationships
     account = relationship("Account", back_populates="chat_rooms")
     event = relationship("Event", back_populates="chat_rooms")
-    owner = relationship("User", foreign_keys=[owner_id])
+    owner = relationship("User", foreign_keys=[owner_id], back_populates="owned_chatrooms")
     
     # Indexes for queries
     __table_args__ = (
